@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1675958079 source:c:\users\hp\documents\code\ltnc\gamebtl\src\character.cpp
+	"Character.h"
+
+1675958079 c:\users\hp\documents\code\ltnc\gamebtl\include\character.h
+
+1678207198 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+
