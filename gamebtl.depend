@@ -1,0 +1,37 @@
+# depslib dependency file v1.0
+1675958079 source:c:\users\hp\documents\code\ltnc\gamebtl\src\character.cpp
+	"Character.h"
+
+1675958079 c:\users\hp\documents\code\ltnc\gamebtl\include\character.h
+
+1678466143 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	"LTexture.h"
+	"Button.h"
+
+1678466262 source:c:\users\hp\documents\code\ltnc\gamebtl\ltexture.cpp
+	"LTexture.h"
+
+1678465548 c:\users\hp\documents\code\ltnc\gamebtl\ltexture.h
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_mixer.h>
+	<SDL_ttf.h>
+	<iostream>
+	<fstream>
+	<sstream>
+	<string>
+	<vector>
+	<ctime>
+
+1678466169 c:\users\hp\documents\code\ltnc\gamebtl\button.h
+	<SDL.h>
+	<SDL_image.h>
+	"LTexture.h"
+
+1678466317 source:c:\users\hp\documents\code\ltnc\gamebtl\button.cpp
+	"Button.h"
+	"LTexture.h"
+
