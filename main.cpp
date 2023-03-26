@@ -2,12 +2,10 @@
 #include<SDL.h>
 #include<SDL_image.h>
 #include "LTexture.h"
-#include "Button.h"
+#include "Klee.h"
+//#include "Button.h"
 using namespace std;
 
-const int SCREEN_WIDTH = 960;
-const int SCREEN_HEIGHT = 640;
-const int SCREEN_BPP = 32;
 const string WINDOW_TITLE = "Game ver 1.0";
 
 SDL_Texture* loadTexture(string path);
@@ -16,14 +14,19 @@ bool loadMedia();
 void quitSDL(SDL_Window* window, SDL_Renderer* renderer);
 void close();
 
+
 SDL_Window* gWindow = NULL;
 LTexture gTBackground;
 LTexture gTKlee;
+LTexture gTKleeSpriteSheet;
+SDL_Rect gKleeSpriteClips[KLEE_WALKING_FRAME];
 SDL_Renderer* gRenderer = NULL;
 SDL_Event event;
+LTexture gTGround;
+LTexture gTMap;
 
 //Buttons
-Button gButtons[TOTAL_BUTTONS];
+//Button gButtons[TOTAL_BUTTONS];
 
 int main(int argc, char* argv[]){
     if(!initSDL()){
@@ -34,29 +37,65 @@ int main(int argc, char* argv[]){
             cout << "Unable to load media\n";
         }
         else{
-            bool isRunning = 1; double degree = 0;
+            bool isRunning = 1; //double degree = 0;
+            Klee klee;
+            int frame = 0;
+            SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+            int scrollingOffset = 0;
+            SDL_Rect wall; wall.x = 0; wall.y = SCREEN_HEIGHT - 64; wall.w = 32 * 16; wall.h = 64;
             while(isRunning){
                 while(SDL_PollEvent(&event)){
                     if(event.type == SDL_QUIT){
                         isRunning = 0;
                     }
-
-                    //Button handle events
-                    for(int i = 0; i < TOTAL_BUTTONS; i++){
-                        gButtons[i].handleEvent(&event);
+                    else if(event.type == SDL_KEYDOWN){
+                        switch(event.key.keysym.sym){
+                            case SDLK_RIGHT:
+                                frame = 0;
+                                break;
+                            case SDLK_LEFT:
+                                frame = 1;
+                                break;
+                        }
                     }
+                    klee.handleKleeEvent(event);
+                }
+                klee.move(wall);
+
+                --scrollingOffset;
+                if(scrollingOffset < -gTBackground.getWidth()){
+                    scrollingOffset = 0;
+                }
+                camera.x = klee.getKleePosX() - Klee::KLEE_WIDTH;
+                camera.y = klee.getKleePosY() - Klee::KLEE_HEIGHT;
+
+                //Keep the camera in bounds
+                if(camera.x < 0){
+                    camera.x = 0;
+                }
+                if(camera.y < 0){
+                    camera.y = 0;
+                }
+                if(camera.x > LEVEL_WIDTH - camera.w){
+                    camera.x = LEVEL_WIDTH - camera.w;
+                }
+                if(camera.y > LEVEL_HEIGHT - camera.h){
+                    camera.y = LEVEL_HEIGHT - camera.h;
                 }
                 //Clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render texture to screen
-				gTBackground.render(0, 0, gRenderer);
-				gTKlee.render(10, 458, gRenderer);
-				for(int i = 0; i < BUTTON_SPRITE_TOTAL; i++){
+                gTBackground.render(scrollingOffset, 0, gRenderer);
+                gTBackground.render(scrollingOffset + gTBackground.getWidth(), 0, gRenderer);
+				gTMap.render(0, 0, gRenderer, &camera);;
+				/*for(int i = 0; i < BUTTON_SPRITE_TOTAL; i++){
                     gButtons[i].render(gTButtonSprite, gRenderer, NULL);
-				}
+				}*/
 				//Update screen
+				SDL_Rect* currentClip = &gKleeSpriteClips[frame];
+				klee.render(gTKleeSpriteSheet, gRenderer, currentClip, camera.x, camera.y);
+				cout << klee.getKleePosX() << ' ' << klee.getKleePosY() << '\n';
 				SDL_RenderPresent(gRenderer);
             }
         }
@@ -103,36 +142,46 @@ bool initSDL(){
 
 bool loadMedia(){
     bool success = true;
-    if(!gTBackground.loadFromFile("image/bg.png", gRenderer)){
+    if(!gTBackground.loadFromFile("image/png/BG/BG.png", gRenderer)){
         cout << "Failed to load background image!"; success = false;
     }
-    if(!gTKlee.loadFromFile("image/klee_test.png", gRenderer)){
-        cout << "Failed to load Klee image!"; success = false;
+    if(!gTKleeSpriteSheet.loadFromFile("image/characters/Heroes/Klee.png", gRenderer)){
+        cout << "Failed to load character image!"; success = false;
     }
-    if(!gTButtonSprite.loadFromFile("image/button.png", gRenderer)){
-        cout << "Failed to load buttons!"; success = false;
+    if(!gTMap.loadFromFile("image/png/Map/map_1-1.png", gRenderer)){
+        cout << "Failed to load map!"; success = false;
     }
     else{
-        //Top left
-        for(int i = 0; i < BUTTON_SPRITE_TOTAL; i++){
-            gSpriteClips[i].x = 0;
-            gSpriteClips[i].y = i * 200;
-            gSpriteClips[i].w = BUTTON_WIDTH;
-            gSpriteClips[i].h = BUTTON_HEIGHT;
-        }
-        gButtons[0].setPosition(0, 0);
-		gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
-		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
-		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
+        //Set sprite clips
+        gKleeSpriteClips[0].x = 0;
+        gKleeSpriteClips[0].y = 97;
+        gKleeSpriteClips[0].w = 32.5;
+        gKleeSpriteClips[0].h = 48.5;
+
+        gKleeSpriteClips[1].x = 0;
+        gKleeSpriteClips[1].y = 48.5;
+        gKleeSpriteClips[1].w = 32.5;
+        gKleeSpriteClips[1].h = 48.5;
+/*
+        gKleeSpriteClips[2].x = 65;
+        gKleeSpriteClips[2].y = 97;
+        gKleeSpriteClips[2].w = 32.5;
+        gKleeSpriteClips[2].h = 48.5;
+
+        gKleeSpriteClips[3].x = 97.5;
+        gKleeSpriteClips[3].y = 97;
+        gKleeSpriteClips[3].w = 32.5;
+        gKleeSpriteClips[3].h = 48.5; */
     }
     return success;
 }
 
 void close(){
 	//Free loaded image
-	gTButtonSprite.free();
+	//gTButtonSprite.free();
 	gTBackground.free();
 	gTKlee.free();
+	gTKleeSpriteSheet.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -143,3 +192,5 @@ void close(){
 	IMG_Quit();
 	SDL_Quit();
 }
+
+
