@@ -3,10 +3,10 @@
 Klee::Klee()
 {
     //ctor
-    mKleePosX = 10; mKleePosY = SCREEN_HEIGHT - 64 - KLEE_HEIGHT;
+    mKleeBox.x = 10; mKleeBox.y = SCREEN_HEIGHT - 64 - KLEE_HEIGHT;
     mKleeVelX = 0; mKleeVelY = 0;
-    mKleeCollider.w = KLEE_WIDTH;
-    mKleeCollider.h = KLEE_HEIGHT;
+    mKleeBox.w = KLEE_WIDTH;
+    mKleeBox.h = KLEE_HEIGHT;
 }
 
 void Klee::handleKleeEvent(SDL_Event& e){
@@ -29,50 +29,69 @@ void Klee::handleKleeEvent(SDL_Event& e){
 
 }
 
-bool Klee::checkCollision(SDL_Rect a, SDL_Rect b){
-    int top_a, top_b;
-    int bottom_a, bottom_b;
-    int left_a, left_b;
-    int right_a, right_b;
-    top_a = a.y; top_b = b.y;
-    bottom_a = a.y + a.h; bottom_b = b.y + b.h;
-    left_a = a.x; left_b = b.x;
-    right_a = a.x + a.w; right_b = b.x + b.w;
-    if(bottom_a <= top_b){
-        return 0;
+bool Klee::touchObjects(Tile* tiles[]){
+    bool res = false;
+    for(int i = 0; i < TOTAL_TILES; i++){
+        //check wall type tile and collision
+        int ttype = tiles[i]->getType(); //cout << ttype << ' ';
+        bool obj = false;
+        for(int j = 0; j < 10; j++){
+            if(ttype == OBJECTS_ID[j]){
+                //cout << tiles[i]->getBox().x << ' ' << tiles[i]->getBox().y << '\n';
+                 obj = true; break;
+            }
+        }
+        SDL_Rect tileBox = tiles[i]->getBox(); tileBox.y += 2;
+        if(obj && checkCollision(mKleeBox, tileBox)){
+            res = true; break;
+        }
     }
-    if(top_a >= bottom_b){
-        return 0;
-    }
-    if(left_a >= right_b){
-        return 0;
-    }
-    if(right_a <= left_b){
-        return 0;
-    }
-    return 1;
+    return res;
 }
 
-void Klee::move(SDL_Rect& object){
-    mKleePosX += mKleeVelX; mKleeCollider.x = mKleePosX;
-    //check if character moves out of screen
-    if((mKleePosX < 0) || (mKleePosX + KLEE_WIDTH > LEVEL_WIDTH) || checkCollision(mKleeCollider, object)){
-        mKleePosX -= mKleeVelX; mKleeCollider.x = mKleePosX;
+void Klee::move(Tile* tiles[]){
+    mKleeBox.x += mKleeVelX;
+    //check if character moves out of screen or touch other objects
+    if((mKleeBox.x < 0) || (mKleeBox.x + KLEE_WIDTH > LEVEL_WIDTH) || touchObjects(tiles)){
+        mKleeBox.x -= mKleeVelX;
     }
-    mKleePosY += mKleeVelY; mKleeCollider.y = mKleePosY;
-    if((mKleePosY < 0) || (mKleePosY + KLEE_HEIGHT > LEVEL_HEIGHT) || checkCollision(mKleeCollider, object)){
-        mKleePosY -= mKleeVelY; mKleeCollider.y = mKleePosY;
+    mKleeBox.y += mKleeVelY;
+    if((mKleeBox.y < 0) || (mKleeBox.y + KLEE_HEIGHT > LEVEL_HEIGHT)|| touchObjects(tiles)){
+        mKleeBox.y -= mKleeVelY;
     }
 }
 
-void Klee::render(LTexture& gTKleeSpriteSheet, SDL_Renderer* gRenderer, SDL_Rect* clip, int camX, int camY, double angle, SDL_Point* center, SDL_RendererFlip flip){
-    gTKleeSpriteSheet.render(mKleePosX - camX, mKleePosY - camY, gRenderer, clip, angle, center, flip);
+void Klee::render(LTexture& gTKleeSpriteSheet, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera){
+    gTKleeSpriteSheet.render(mKleeBox.x - camera.x, mKleeBox.y - camera.y, gRenderer, clip);
 }
 
-int Klee::getKleePosX(){
-    return mKleePosX;
+void Klee::setCamera(SDL_Rect& camera){
+    camera.x = mKleeBox.x - 100;
+    camera.y = 0;
+
+    //Keep the camera in bounds
+    if(camera.x < 0){
+        camera.x = 0;
+    }
+    if(camera.y < 0){
+        camera.y = 0;
+    }
+    if(camera.x > LEVEL_WIDTH - camera.w){
+        camera.x = LEVEL_WIDTH - camera.w;
+    }
+    if(camera.y > LEVEL_HEIGHT - camera.h){
+        camera.y = LEVEL_HEIGHT - camera.h;
+    }
 }
 
-int Klee::getKleePosY(){
-    return mKleePosY;
+int Klee::getKleeVelX(){
+    return mKleeVelX;
+}
+
+int Klee::getKleeVelY(){
+    return mKleeVelY;
+}
+
+SDL_Rect Klee::getKleeBox(){
+    return mKleeBox;
 }

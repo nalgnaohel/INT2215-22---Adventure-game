@@ -4,21 +4,18 @@
 
 1675958079 c:\users\hp\documents\code\ltnc\gamebtl\include\character.h
 
-1679844615 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
+1680749909 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
 	<iostream>
-	<SDL.h>
-	<SDL_image.h>
+	<string.h>
+	"Utils.h"
 	"LTexture.h"
 	"Klee.h"
 
 1679240561 source:c:\users\hp\documents\code\ltnc\gamebtl\ltexture.cpp
 	"LTexture.h"
 
-1679240561 c:\users\hp\documents\code\ltnc\gamebtl\ltexture.h
-	<SDL.h>
-	<SDL_image.h>
-	<SDL_mixer.h>
-	<SDL_ttf.h>
+1680196058 c:\users\hp\documents\code\ltnc\gamebtl\ltexture.h
+	"Utils.h"
 	<iostream>
 	<fstream>
 	<sstream>
@@ -35,16 +32,39 @@
 	"Button.h"
 	"LTexture.h"
 
-1679844730 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
+1680750941 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
 	"Klee.h"
 
-1679844910 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
+1680694250 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
 	<SDL.h>
 	<SDL_image.h>
+	"Utils.h"
 	"LTexture.h"
+	"Tile.h"
 
 1679246304 source:c:\users\hp\documents\code\ltnc\gamebtl\map.cpp
 	"Map.h"
 
 1679246304 c:\users\hp\documents\code\ltnc\gamebtl\map.h
+
+1680693989 c:\users\hp\documents\code\ltnc\gamebtl\utils.h
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	<SDL_mixer.h>
+
+1680194858 source:c:\users\hp\documents\code\ltnc\gamebtl\enemy.cpp
+	"Enemy.h"
+
+1680194857 c:\users\hp\documents\code\ltnc\gamebtl\enemy.h
+
+1680693989 source:c:\users\hp\documents\code\ltnc\gamebtl\utils.cpp
+	"Utils.h"
+
+1680512397 c:\users\hp\documents\code\ltnc\gamebtl\tile.h
+	"Utils.h"
+	"LTexture.h"
+
+1680750583 source:c:\users\hp\documents\code\ltnc\gamebtl\tile.cpp
+	"Tile.h"
 

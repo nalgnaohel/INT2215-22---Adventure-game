@@ -7,6 +7,7 @@
     "expandedProjectPaths": [
         "."
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "5.tsx": {
             "dynamicWrapping": false,
@@ -17,8 +18,8 @@
             "scale": 1.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 242.66666666666666,
-                "y": 497.66666666666663
+                "x": 2555.333333333333,
+                "y": 605.6666666666666
             }
         },
         "tiles.tsx": {
@@ -31,8 +32,10 @@
             "scaleInEditor": 1
         }
     },
+    "last.exportedFilePath": "C:/Users/HP/Documents/code/ltnc/gamebtl/image/png/Map",
     "last.externalTilesetPath": "C:/Users/HP/Documents/code/ltnc/gamebtl/image/png/Map",
     "last.imagePath": "C:/Users/HP/Documents/code/ltnc/gamebtl/image/png/Object",
+    "map.lastUsedExportFilter": "All Files (*)",
     "map.lastUsedFormat": "tmx",
     "map.width": 112,
     "openFiles": [

@@ -2,15 +2,9 @@
 #define KLEE_H
 #include <SDL.h>
 #include <SDL_image.h>
+#include "Utils.h"
 #include "LTexture.h"
-
-const int SCREEN_WIDTH = 960;
-const int SCREEN_HEIGHT = 640;
-const int SCREEN_BPP = 32;
-
-const int LEVEL_WIDTH = 3584;
-const int LEVEL_HEIGHT = 640;
-const int KLEE_WALKING_FRAME = 4;
+#include "Tile.h"
 
 class Klee
 {
@@ -22,18 +16,19 @@ class Klee
         Klee();
 
         void handleKleeEvent(SDL_Event &e);
-        bool checkCollision(SDL_Rect a, SDL_Rect b);
-        void move(SDL_Rect& object);
-        void render(LTexture& gTKleeSpriteSheet, SDL_Renderer* gRenderer, SDL_Rect* clip, int camX, int camY, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
-        int getKleePosX();
-        int getKleePosY();
+        bool touchObjects(Tile* tiles[]);
+        void move(Tile* tiles[]);
+        void render(LTexture& gTKleeSpriteSheet, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
+        void setCamera(SDL_Rect& camera);
+        int getKleeVelX();
+        int getKleeVelY();
+        SDL_Rect getKleeBox();
 
     protected:
 
     private:
-        int mKleePosX, mKleePosY;
         int mKleeVelX, mKleeVelY;
-        SDL_Rect mKleeCollider;
+        SDL_Rect mKleeBox;
 };
 
 #endif // KLEE_H

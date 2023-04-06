@@ -37,12 +37,16 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="Enemy.cpp" />
+		<Unit filename="Enemy.h" />
 		<Unit filename="Klee.cpp" />
 		<Unit filename="Klee.h" />
 		<Unit filename="LTexture.cpp" />
 		<Unit filename="LTexture.h" />
-		<Unit filename="Map.cpp" />
-		<Unit filename="Map.h" />
+		<Unit filename="Tile.cpp" />
+		<Unit filename="Tile.h" />
+		<Unit filename="Utils.cpp" />
+		<Unit filename="Utils.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
