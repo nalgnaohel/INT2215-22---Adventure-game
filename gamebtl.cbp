@@ -37,14 +37,22 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="Buttons.cpp" />
+		<Unit filename="Buttons.h" />
 		<Unit filename="Enemy.cpp" />
 		<Unit filename="Enemy.h" />
+		<Unit filename="Function.cpp" />
+		<Unit filename="Function.h" />
 		<Unit filename="Klee.cpp" />
 		<Unit filename="Klee.h" />
 		<Unit filename="LTexture.cpp" />
 		<Unit filename="LTexture.h" />
+		<Unit filename="Level.cpp" />
+		<Unit filename="Level.h" />
 		<Unit filename="Tile.cpp" />
 		<Unit filename="Tile.h" />
+		<Unit filename="Timer.cpp" />
+		<Unit filename="Timer.h" />
 		<Unit filename="Utils.cpp" />
 		<Unit filename="Utils.h" />
 		<Unit filename="main.cpp" />

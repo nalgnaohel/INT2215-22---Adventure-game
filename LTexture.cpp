@@ -15,7 +15,7 @@ LTexture::~LTexture()
     free();
 }
 
-bool LTexture::loadFromFile(std:: string path, SDL_Renderer* gRenderer){
+bool LTexture::loadFromFile(string path, SDL_Renderer* gRenderer){
     //result texture
     SDL_Texture* resTexture = NULL;
     //Load image
@@ -40,6 +40,27 @@ bool LTexture::loadFromFile(std:: string path, SDL_Renderer* gRenderer){
     mTexture = resTexture;
     return mTexture != NULL;
 }
+
+#if defined(SDL_TTF_MAJOR_VERSION)
+bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor, SDL_Renderer* gRenderer, TTF_Font* gFont){
+    free();
+    SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText.c_str(), textColor);
+    if(textSurface == NULL){
+        cout << "Unable to render text surface! SDL_TTF Error: " << TTF_GetError() << '\n';
+    }
+    else{
+        mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+        if(mTexture == NULL){
+            cout << "Unable to create texture from rendered text! SDL Error: " << SDL_GetError() << '\n';
+        }
+        else{
+            mWidth = textSurface->w; mHeight = textSurface->h;
+        }
+        SDL_FreeSurface(textSurface);
+    }
+    return mTexture != NULL;
+}
+#endif // defined
 
 void LTexture::free(){
     if(mTexture != NULL){
