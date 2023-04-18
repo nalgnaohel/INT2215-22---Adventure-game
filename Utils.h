@@ -15,6 +15,7 @@
 #include <SDL_mixer.h>
 using namespace std;
 
+#define mp make_pair
 #define pb push_back
 #define JUMP 1
 #define FALL 2
@@ -30,7 +31,11 @@ const int MAX_TOTAL_TILES = 4480;
 const int FRAME_PER_SECOND = 50;
 const int MAX_FALL_SPEED = 10;
 const int GRAVITY_SPEED = 1;
+const int GROUND_VEL = 1;
+
 const int KLEE_FRAME_PER_SECOND = 20;
+const int KLEE_ATTACK_FRAME_PER_SECOND = 5;
+const int KLEE_ID_FRAME[9] = {5, 20, 20, 20, 15, 20, 20, 20, 20};
 
 const int SCREEN_WIDTH = 960; //1000
 const int SCREEN_HEIGHT = 640; //544
@@ -38,11 +43,10 @@ const int SCREEN_BPP = 32;
 
 const int LEVEL_WIDTH = 3584;
 const int LEVEL_HEIGHT = 640;
-const int KLEE_WALKING_FRAME = 7;
 
 const int TOTAL_MENU_BUTTONS = 2;
-const int MENU_BUTTON_WIDTH = 418;
-const int MENU_BUTTON_HEIGHT = 102;
+const int MENU_BUTTON_WIDTH = 200;
+const int MENU_BUTTON_HEIGHT = 52;
 
 enum ButtonsSprite{
     BUTTON_SPRITE_MOUSE_OUT = 0,

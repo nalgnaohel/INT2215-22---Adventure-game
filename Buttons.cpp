@@ -46,7 +46,7 @@ void Buttons::render(SDL_Renderer* gRenderer, LTexture& gTButtonsSpriteSheet, SD
             cout << "Unable to display button name!\n";
         }
         else{
-            mTButtonName.render(mButtonBox.x + 5, mButtonBox.y + 10, gRenderer);
+            mTButtonName.render(mButtonBox.x + (mButtonBox.w / 2 - mTButtonName.getWidth() / 2), mButtonBox.y + (mButtonBox.h / 2 - mTButtonName.getHeight() / 2), gRenderer);
         }
     }
 }

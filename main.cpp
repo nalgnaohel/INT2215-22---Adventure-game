@@ -7,6 +7,7 @@
 #include "Buttons.h"
 #include "Function.h"
 #include "Timer.h"
+#include "movingGround.h"
 
 using namespace std;
 
@@ -30,6 +31,7 @@ LTexture gTEndLevelDialog;
 LTexture gTEndLevelText;
 TTF_Font* gFont = NULL;
 TTF_Font* gTitleFont = NULL;
+LTexture gTTime;
 
 SDL_Rect gLightBallSpriteClips[9];
 SDL_Rect gNPC1SpriteClips[2];
@@ -40,15 +42,17 @@ vector<Buttons> menuStart;
 string lv;
 vector<Enemy> mush1;
 vector<pair<pair<int, int>, int>> ground;
+vector<int> mvGroundId;
+vector<movingGround> upDown;
 Tile* tiles[MAX_TOTAL_TILES];
 int TOTAL_TILES;
 SDL_Rect gKleeSpriteClips[9][12];
 int gKleeSpriteClipsSize[9];
 int tot_tiles = 0;
 
-string fileKlee = "C:/Users/HP/Documents/code/ltnc/gamebtl/image/characters/Lightning Mage";
-string fileKleeState[9] = {"Attack_2", "Dead", "Hurt", "Idle", "Jump", "Light_ball", "Light_charge", "Run", "Walk" };
-string fileLightBall = "Charge";
+string fileKlee = "C:/Users/HP/Documents/code/ltnc/gamebtl/image/characters/Wanderer Magican";
+string fileKleeState[9] = {"Attack_1", "Dead", "Hurt", "Idle", "Jump", "Magic_arrow", "Magic_sphere", "Run", "Walk" };
+string fileLightBall = "Charge_1";
 
 bool isGround(string typeTile){
     int id = stoi(typeTile);
@@ -99,6 +103,7 @@ int main(int argc, char* argv[]){
                 SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
                 mush1.clear();
                 ground.clear();
+                upDown.clear();
                 for(int i = 0; i < MAX_TOTAL_TILES; i++){
                     tiles[i] = NULL;
                 }
@@ -119,12 +124,21 @@ int main(int argc, char* argv[]){
                         if(event.type == SDL_QUIT){
                             isRunning = 0;
                         }
-                        klee.handleKleeEvent(event);
+                        klee.handleKleeEvent(event, gKleeSpriteClips, ground);
                     }
-                    klee.move(tiles, ground);
-                    cout << klee.getKleeVelX() << ' ' << klee.getKleeVelY() << ' ' << klee.getKleeBox().x << ' ' << klee.getKleeBox().y << ' ' << klee.onGround(ground) << ' ' << klee.isDown() << ' ' << klee.isJump() << '\n';
-                    //cout << "Jump: " << klee.isJump() << ' ' << klee.onGround(ground) << '\n';
+                    for(int i = 0; i < (int)upDown.size(); i++){
+                        upDown[i].move(tiles);
+                        ground[mvGroundId[i]].fi.fi = upDown[i].getLx();
+                        ground[mvGroundId[i]].fi.se = upDown[i].getRx();
+                        ground[mvGroundId[i]].se = upDown[i].getBox().y;
+                    }
+                    klee.move(tiles, ground, gKleeSpriteClips);
+                    for(int i = 0; i < (int)mvGroundId.size(); i++){
+                        cout << klee.getKleeBox().x << ' ' << klee.getKleeBox().x + klee.getKleeBox().w << ' ' << klee.getKleeBox().y << ' ' << klee.getKleeBox().y + klee.getKleeBox().h << " - ";
+                        cout << ground[mvGroundId[i]].fi.fi << ' ' << ground[mvGroundId[i]].fi.se << ' ' << ground[mvGroundId[i]].se << '\n';
+                    }
                     klee.setCamera(camera);
+                    //cout << klee.spriteId << ' ' << klee.onGround(ground) << '\n';
                     for(int i = 0; i < (int)mush1.size(); i++){
                         mush1[i].move();
                     }
@@ -133,13 +147,13 @@ int main(int argc, char* argv[]){
                         if(checkCollision(kBox, m1Box)){
                             int damageTimes = 0;
                             numOfCollision++;
-                            if(numOfCollision == 10){
-                                if(damageTimes < 3){
+                            if(numOfCollision == 3){
+                                if(damageTimes < 5){
                                     klee.updateKleeHealth(mush1[i].getEnemyDamage()); damageTimes++;
                                 }
                                 numOfCollision = 0;
                             }
-                            //cout << numOfCollision << ' ' << klee.getKleeHealth() << '\n';
+                            cout << numOfCollision << ' ' << klee.getKleeHealth() << '\n';
                             if(klee.getKleeBox().x < m1Box.x){
                                 mush1[i].dir = 0;
                             }
@@ -158,43 +172,69 @@ int main(int argc, char* argv[]){
                     if(gameOver){
                         isRunning = false;
                     }
-                    --scrollingOffset;
-                    if(scrollingOffset < -gTBackground.getWidth()){
-                        scrollingOffset = 0;
-                    }
 
                     //Clear screen
                     SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
                     SDL_RenderClear(gRenderer);
 
-                    gTBackground.render(scrollingOffset, 0, gRenderer);
-                    gTBackground.render(scrollingOffset + gTBackground.getWidth(), 0, gRenderer);
+                    gTBackground.render(0, 0, gRenderer);
                     for(int i = 0; i < tot_tiles; i++){
                         //cout << i << ' ' << tiles[i]->getType() << '\n';
                         if(tiles[i]->getType() != -1){
                             tiles[i]->render(gRenderer, gTypeTiles, camera);
                         }
                     }
-                    SDL_Rect* currentClip = &gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_FRAME_PER_SECOND];
+                    SDL_Rect* currentClip;
+                    if(klee.spriteId == 0){
+                        currentClip = &gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId]];
+                    }
+                    else{
+                        currentClip = &gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId]];
+                    }
                     klee.render(gTKlee[klee.spriteId], gRenderer, currentClip, camera);
                     for(int i = 0; i < (int)mush1.size(); i++){
                         mush1[i].render(gTEnemy, gRenderer, camera);
                     }
                     SDL_RenderPresent(gRenderer);
 				//update frame
-                    if(klee.spriteId != 4){
-                        //if(klee.spriteId == 3){
-                        //    klee.kleeFrame = 0;
-                        //}
-                        //else{
+                    if(klee.spriteId != 4 && klee.spriteId != 0){
+                        if(klee.spriteId == 3){
+                            klee.kleeFrame = 0;
+                        }
+                        else{
                             klee.kleeFrame++;
-                            if(klee.kleeFrame / KLEE_FRAME_PER_SECOND >= gKleeSpriteClipsSize[klee.spriteId]){
+                            if(klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId] >= gKleeSpriteClipsSize[klee.spriteId]){
                                 klee.kleeFrame = 0;
                             }
-                        //}
-                        klee.updateKleeBox(gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_FRAME_PER_SECOND]);
+                        }
+                        klee.updateKleeBox(gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId]], ground);
+                    }
+                    else if(klee.spriteId == 4) {
+                        if(klee.kleeFrame >= 6 * KLEE_ID_FRAME[klee.spriteId]){
+                            klee.kleeFrame++;
+                            if(klee.kleeFrame == 8 * KLEE_ID_FRAME[klee.spriteId]){
+                                klee.spriteId = 3; klee.kleeFrame = 0;
+                            }
+                        }
+                        klee.updateKleeBox(gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId]], ground);
+                    }
+                    else{
+                        klee.kleeFrame++;
+                        if(klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId] >= gKleeSpriteClipsSize[0]){
+                            klee.kleeFrame = 0;
+                        }
+                        klee.updateKleeBox(gKleeSpriteClips[klee.spriteId][klee.kleeFrame / KLEE_ID_FRAME[klee.spriteId]], ground);
                     }
                     int now_time = fps_timer.getCurTicks();
+                    int elasped = SDL_GetTicks();
+                    string time_ = "Time: " + to_string(elasped);
+                    SDL_Color titleColor = {51, 25, 0};
+                    if(!gTTime.loadFromRenderedText(time_, titleColor, gRenderer, gFont)){
+                        cout << "Unable to display time\n"; break;
+                    }
+                    else{
+                        gTTime.render(10, 10, gRenderer);
+                    }
                     int frameTime = 1000 / FRAME_PER_SECOND;
                     //cout << now_time << ' ' << frameTime << '\n';
                     if(now_time < frameTime){
@@ -205,6 +245,7 @@ int main(int argc, char* argv[]){
                 if(gameOver){
                     int gameState = showGameOver("Game Over!", gTBackground, gTEndLevelDialog, gTEndLevelText, gTMenuButtonsSpriteSheet, gRenderer, gFont, menuStart);
                     if(gameState == 1){
+                        SDL_RenderClear(gRenderer);
                         int s = showMenu(gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
                         if(s){
                             isRunning = 0; play = 0;
@@ -278,7 +319,7 @@ bool initSDL(){
 
 bool loadMedia(){
     bool success = true;
-    if(!gTBackground.loadFromFile("image/png/BG/BG.png", gRenderer)){
+    if(!gTBackground.loadFromFile("image/png/BG/background_2.jpg", gRenderer)){
         cout << "Failed to load background image!"; success = false;
     }
     if(!gTEndLevelSign.loadFromFile("image/png/Object/Sign_1.png", gRenderer)){
@@ -437,7 +478,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy>& mush1){
     }
     file.close();
     int tileId = 0;int li = -1; int lj = -1;
-    ground.pb(make_pair(make_pair(0, 9), 18));
+    ground.pb(make_pair(make_pair(0, 9 * 32), 18 * 32));
     for(int i = 0; i < (int)map_content.size(); i++){
         for(int j = 0; j < (int)map_content[i].size(); j++){
             stringId = map_content[i][j];
@@ -448,12 +489,10 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy>& mush1){
             else{
                 if(intId == -15) intId = -1;
                 if(intId == 11){
-                    //cout << "(" << i << ", " << j << ") - ";
                     li = i; lj = j;
                 }
                 if(intId == 7){
-                    //cout << "(" << i << ", " << j << ")\n";
-                    ground.pb(make_pair(make_pair(lj, j), i));
+                    ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
                     coor.pb(make_pair(make_pair(lj, li), make_pair(j, i)));
                     li = -1; lj = -1;
                 }
@@ -461,14 +500,19 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy>& mush1){
                     li = i; lj = j;
                 }
                 if(intId == 3){
-                    ground.pb(make_pair(make_pair(lj, j), i));
+                    ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
                     li = -1; lj = -1;
                 }
                 if(intId == 13){
                     li = i; lj = j;
                 }
                 if(intId == 15){
-                    ground.pb(make_pair(make_pair(lj, j), i));
+                    ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
+                    if((int)upDown.size() < 2){
+                        movingGround tmp(lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, 64, 576, "ud");
+                        upDown.pb(tmp);
+                        mvGroundId.pb((int)ground.size() - 1);
+                    }
                 }
                 tiles[tileId] = new Tile(j * TILE_WIDTH, i * TILE_HEIGHT, intId); tileId++;
             }
@@ -479,6 +523,11 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy>& mush1){
             break;
         }
     }
+    for(int i = 0; i < (int)upDown.size(); i++){
+        cout << upDown[i].getLT() << " - " << upDown[i].getly() << " - " << tiles[upDown[i].getLT()]->getBox().x << '\n';
+        cout << upDown[i].getRT() << " - " << upDown[i].getry() << " - " << tiles[upDown[i].getRT()]->getBox().x << '\n';
+    }
+    ground.pb(make_pair(make_pair(102 * 32, 111 * 32), 18 * 32));
     tot_tiles = tileId;
     srand(time(NULL));
     for(int i = 0; i < 3; i++){
@@ -488,9 +537,6 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy>& mush1){
     }
     //cout << "----------------------------------------------------------------------\n";
     //cout << "Ground:\n";
-    for(int i = 0; i < (int)ground.size(); i++){
-        cout << ground[i].fi.fi * TILE_WIDTH << ' ' << ground[i].fi.se * TILE_WIDTH << ' ' << ground[i].se * TILE_HEIGHT << '\n';
-    }
     return success;
 }
 
@@ -500,6 +546,8 @@ void close(Tile* tiles[]){
 	for(int i = 0; i < 11; i++){
         gTKlee[i].free();
 	}
+	gTTime.free();
+	gTText.free();
 	gTEnemy.free();
 	gTEndLevelSign.free();
 	gTMenuButtonsSpriteSheet[0].free();
@@ -515,4 +563,6 @@ void close(Tile* tiles[]){
 	}
 	mush1.clear();
 	ground.clear();
+	upDown.clear();
+	menuStart.clear();
 }

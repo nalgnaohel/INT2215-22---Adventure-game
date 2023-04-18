@@ -14,9 +14,10 @@ Klee::Klee(SDL_Rect& box)
     mKleeMxHealth = 100;
     mKleeHealth = mKleeMxHealth;
     wind = 1;
+    mKleeLife = 3;
 }
 
-void Klee::handleKleeEvent(SDL_Event& e){
+void Klee::handleKleeEvent(SDL_Event& e, SDL_Rect (&gKleeSpriteClips)[9][12], vector<pair<pair<int, int>, int>>& ground){
     if(e.type == SDL_KEYDOWN && e.key.repeat == 0){
         switch(e.key.keysym.sym){
         case SDLK_UP:
@@ -27,13 +28,25 @@ void Klee::handleKleeEvent(SDL_Event& e){
         case SDLK_RIGHT:
             {
                 statusX = 2; mKleeVelX += KLEE_VEL;
-                mRight = 1; mLeft = 0; spriteId = 8; kleeFrame = 0;
+                mRight = 1; mLeft = 0;
+                if(!mJump && !mDown){
+                    spriteId = 8, kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId] ], ground);
+                }
             }
         break;
         case SDLK_LEFT:
             {
-                statusX = 1; mKleeVelX -= KLEE_VEL;
-                mLeft = 1; mRight = 0; spriteId = 8; kleeFrame = 0;
+                statusX = 1; mKleeVelX -= KLEE_VEL; mLeft = 1; mRight = 0;
+                if(!mJump && !mDown){
+                     spriteId = 8; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+                }
+            }
+        break;
+        case SDLK_e:
+            {
+                if(spriteId != 4){
+                    spriteId = 0; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+                }
             }
         break;
         }
@@ -48,15 +61,27 @@ void Klee::handleKleeEvent(SDL_Event& e){
         break;
         case SDLK_LEFT:
             {
-                mLeft = 0; mKleeVelX = 0; spriteId = 3; kleeFrame = 0;
+                mLeft = 0; mKleeVelX = 0;
+                if(spriteId == 8){
+                    spriteId = 3; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+                }
             }
         break;
         case SDLK_RIGHT:
             {
-                mRight = 0; mKleeVelX = 0; spriteId = 3; kleeFrame = 0;
+                mRight = 0; mKleeVelX = 0;
+                if(spriteId == 8){
+                    spriteId = 3; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+                }
             }
         break;
-
+        case SDLK_e:
+            {
+                if(spriteId == 0){
+                    spriteId = 3; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+                }
+            }
+        break;
         }
 
     }
@@ -75,17 +100,18 @@ void Klee::reset(SDL_Rect& box){
     mKleeMxHealth = 100;
     mKleeHealth = mKleeMxHealth;
     wind = 1;
+    mKleeLife = 3;
 }
 
 bool Klee::onGround(vector<pair<pair<int, int>, int>>& ground){
     for(int i = 0; i < (int)ground.size(); i++){
         //cout << ground[i].fi.fi * TILE_WIDTH << ' ' << ground[i].fi.se * TILE_WIDTH << ' ' << ground[i].se * TILE_HEIGHT << '\n';
-        int lx_ground = ground[i].fi.fi * TILE_WIDTH;
-        int rx_ground = (ground[i].fi.se + 1) * TILE_WIDTH;
-        int y_ground = ground[i].se * TILE_HEIGHT;
+        int lx_ground = ground[i].fi.fi;
+        int rx_ground = ground[i].fi.se + TILE_WIDTH;
+        int y_ground = ground[i].se;
         //cout << mKleeBox
         if(mKleeBox.y + mKleeBox.h == y_ground){
-            if(lx_ground <= mKleeBox.x && mKleeBox.x <= rx_ground){
+            if(lx_ground <= mKleeBox.x + mKleeBox.w && mKleeBox.x <= rx_ground){
                 //cout << "Ground: " << mKleeBox.y + mKleeBox.h << " - " << lx_ground << ' ' << rx_ground << ' ' << y_ground << '\n';
                 return 1;
             }
@@ -136,9 +162,10 @@ bool Klee::touchObjects(Tile* tiles[]){
     return false;
 }
 
-void Klee::move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground){
-    if(mJump){
+void Klee::move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[9][12]){
+    if(mJump && !mDown){
         if(onGround(ground)){
+            spriteId = 4; kleeFrame = 0; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
             mnHeight = mKleeBox.y - 8 * TILE_HEIGHT - 16;
         }
         mKleeVelY += KLEE_VEL;
@@ -148,9 +175,9 @@ void Klee::move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground){
             mJump = 0; mKleeVelY = 0;
         }
         for(int i = 0; i < (int)ground.size(); i++){
-            int lx_ground = ground[i].fi.fi * TILE_WIDTH;
-            int rx_ground = (ground[i].fi.se + 1) * TILE_WIDTH;
-            int y_ground = ground[i].se * TILE_HEIGHT;
+            int lx_ground = ground[i].fi.fi;
+            int rx_ground = ground[i].fi.se + TILE_WIDTH;
+            int y_ground = ground[i].se;
             if(lx_ground <= mKleeBox.x + mKleeBox.w && mKleeBox.x <= rx_ground){
                 if(mKleeBox.y <= y_ground + TILE_HEIGHT && py >= y_ground + TILE_HEIGHT){
                     //cout << "Ground: " << mKleeBox.y << ' ' << py << " - " << lx_ground << ' ' << rx_ground << ' ' << y_ground + TILE_HEIGHT << '\n';
@@ -163,11 +190,21 @@ void Klee::move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground){
         //cout << "After jump: " << mKleeBox.y << '\n';
     }
     if(mJump == 0 && !onGround(ground)){
-        cout << "Fuck: ";
+        //cout << "Fuck: ";
         mDown = 1;
     }
     if(mDown){
         //cout << mKleeVelY << '\n';
+        if(kleeFrame < 5 * KLEE_ID_FRAME[spriteId]){
+            kleeFrame = 5 * KLEE_ID_FRAME[spriteId]; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+        }
+        else{
+            kleeFrame++;
+            if(kleeFrame == 6 * KLEE_ID_FRAME[spriteId]){
+                kleeFrame--;
+            }
+            updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId]], ground);
+        }
         mKleeVelY += GRAVITY_SPEED;
         if(mKleeVelY > MAX_FALL_SPEED){
             mKleeVelY = MAX_FALL_SPEED;
@@ -175,12 +212,14 @@ void Klee::move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground){
         int pdy = mKleeBox.y + mKleeBox.h;
         mKleeBox.y += mKleeVelY;
         for(int i = 0; i < (int)ground.size(); i++){
-            if(mKleeBox.x + mKleeBox.w >= ground[i].fi.fi * TILE_WIDTH && mKleeBox.x <= (ground[i].fi.se + 1) * TILE_WIDTH){
-                if(mKleeBox.y + mKleeBox.h >= ground[i].se * TILE_HEIGHT && pdy <= ground[i].se * TILE_HEIGHT){
+            if(mKleeBox.x + mKleeBox.w >= ground[i].fi.fi && mKleeBox.x <= ground[i].fi.se + TILE_WIDTH){
+                if(mKleeBox.y + mKleeBox.h >= ground[i].se && pdy <= ground[i].se){
                     mKleeVelY = 0; mDown = 0;
-                    cout << "Expected to touch here: " << ground[i].fi.fi * TILE_WIDTH << ' ' << ground[i].fi.se * TILE_WIDTH << ' ' << ground[i].se * TILE_HEIGHT << '\n';
-                    mKleeBox.y = ground[i].se * TILE_HEIGHT - mKleeBox.h;
-
+                    //cout << "Expected to touch here: " << ground[i].fi.fi * TILE_WIDTH << ' ' << ground[i].fi.se * TILE_WIDTH << ' ' << ground[i].se * TILE_HEIGHT << '\n';
+                    kleeFrame = 6 * KLEE_ID_FRAME[spriteId];
+                    SDL_Rect newBox = {817, 70, 31, 58};
+                    updateKleeBox(newBox, ground);
+                    mKleeBox.y = ground[i].se - mKleeBox.h;
                     break;
                 }
             }
@@ -229,9 +268,13 @@ SDL_Rect Klee::getKleeBox(){
     return mKleeBox;
 }
 
-void Klee::updateKleeBox(SDL_Rect& box){
+void Klee::updateKleeBox(SDL_Rect& box, vector<pair<pair<int, int>, int>>& ground){
+    bool ck = onGround(ground); int f = mKleeBox.y + mKleeBox.h;
     mKleeBox.w = box.w;
     mKleeBox.h = box.h;
+    if(ck){
+        mKleeBox.y = f - mKleeBox.h;
+    }
 }
 
 int Klee::getKleeHealth(){

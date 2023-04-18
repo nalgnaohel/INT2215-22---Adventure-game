@@ -22,3 +22,7 @@ int Tile::getType(){
 SDL_Rect Tile::getBox(){
     return mBox;
 }
+
+void Tile::updateBox(int x, int y){
+    mBox.x = x; mBox.y = y;
+}

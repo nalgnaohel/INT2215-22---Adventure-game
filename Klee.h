@@ -14,10 +14,10 @@ class Klee
 
         Klee(SDL_Rect& box);
 
-        void handleKleeEvent(SDL_Event &e);
+        void handleKleeEvent(SDL_Event &e, SDL_Rect (&gKleeSpriteClips)[9][12], vector<pair<pair<int, int>, int>>& ground);
         bool touchObjects(Tile* tiles[]);
         bool onGround(vector<pair<pair<int, int>, int>>& ground);
-        void move(Tile* tiles[], vector<pair<pair<int, int>, int>>& ground);
+        void move(Tile* tiles[],vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[9][12]);
         void render(LTexture& gTKleeSpriteSheet, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
         void setCamera(SDL_Rect& camera);
         void updateKleeHealth(int damage);
@@ -28,7 +28,7 @@ class Klee
         int getKleeHealth();
         int spriteId;
         int kleeFrame;
-        void updateKleeBox(SDL_Rect& box);
+        void updateKleeBox(SDL_Rect& box, vector<pair<pair<int, int>, int>>& ground);
         bool isJump();
         bool isDown();
         void reset(SDL_Rect& box);
