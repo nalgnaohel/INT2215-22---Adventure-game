@@ -13,7 +13,15 @@ movingGround::movingGround(int Lx, int Rx, int y, int lx, int rx, int ly, int ry
     LT = Lx / TILE_WIDTH + (LEVEL_WIDTH / TILE_WIDTH) * (y / TILE_HEIGHT); RT = Rx / TILE_WIDTH - 1 + (LEVEL_WIDTH / TILE_WIDTH) * (y / TILE_HEIGHT);
 }
 
-void movingGround::move(Tile* tiles[]){
+bool movingGround::onmvGround(Klee* klee){
+    SDL_Rect kleeBox = klee->getKleeBox();
+    if(kleeBox.x + kleeBox.w >= mBox.x && kleeBox.x <= mBox.x + mBox.w && kleeBox.y + kleeBox.h == mBox.y){
+        return true;
+    }
+    return false;
+}
+
+void movingGround::move(Tile* tiles[], Klee* klee){
     if(d == "lr"){
         mVelX = dir * GROUND_VEL;
         int x = tiles[LT]->getBox().x; int y = tiles[LT]->getBox().y;
@@ -44,7 +52,12 @@ void movingGround::move(Tile* tiles[]){
         //continue to update (x, y) of each tile in this ground
     }
     else{
+        bool ck = 0;
         mVelY = dir * GROUND_VEL;
+        if(onmvGround(klee)){
+            ck = 1;
+        }
+        int tmpY = mBox.y;
         for(int i = LT - 1; i <= RT; i++){
             int x = tiles[i]->getBox().x;
             int y = tiles[i]->getBox().y + mVelY;
@@ -57,6 +70,10 @@ void movingGround::move(Tile* tiles[]){
             }
             tiles[i]->updateBox(x, y);
             mBox.y = y;
+        }
+        if(ck){
+            int new_y = mBox.y - klee->getKleeBox().h;
+            klee->updatemvGround(new_y);
         }
        // mBox.x = LT * TILE_WIDTH;
     }

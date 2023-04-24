@@ -43,7 +43,7 @@ int Timer::getCurTicks(){
             return tPause;
         }
         else{
-            return SDL_GetTicks() - tStart;
+            return (int)SDL_GetTicks() - tStart;
         }
     }
     return 0;

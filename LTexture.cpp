@@ -38,6 +38,7 @@ bool LTexture::loadFromFile(string path, SDL_Renderer* gRenderer){
         SDL_FreeSurface(loadedSurface);
     }
     mTexture = resTexture;
+    //f_name = path;
     return mTexture != NULL;
 }
 
@@ -74,6 +75,7 @@ void LTexture::render(int x, int y, SDL_Renderer* gRenderer, SDL_Rect* clip, dou
     //Set rendering space and render
     SDL_Rect renderQuad = {x, y, mWidth, mHeight};
     if(clip != NULL){
+        //cout << x << ' ' << y << ' ' << clip->w << ' ' << clip->h << '\n';
         renderQuad.w = clip->w;
         renderQuad.h = clip->h;
     }

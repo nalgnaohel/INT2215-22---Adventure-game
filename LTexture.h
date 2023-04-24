@@ -17,11 +17,13 @@ class LTexture
         //get size of an image
         int getWidth();
         int getHeight();
+        //string f_name;
 
     protected:
 
     private:
         SDL_Texture* mTexture;
+
         int mWidth;
         int mHeight;
 };

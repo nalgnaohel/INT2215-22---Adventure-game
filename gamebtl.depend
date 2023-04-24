@@ -4,9 +4,7 @@
 
 1675958079 c:\users\hp\documents\code\ltnc\gamebtl\include\character.h
 
-1681808341 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
-	<iostream>
-	<string.h>
+1682305187 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
 	"Utils.h"
 	"LTexture.h"
 	"Klee.h"
@@ -16,10 +14,10 @@
 	"Timer.h"
 	"movingGround.h"
 
-1681205285 source:c:\users\hp\documents\code\ltnc\gamebtl\ltexture.cpp
+1682136989 source:c:\users\hp\documents\code\ltnc\gamebtl\ltexture.cpp
 	"LTexture.h"
 
-1681139153 c:\users\hp\documents\code\ltnc\gamebtl\ltexture.h
+1682073111 c:\users\hp\documents\code\ltnc\gamebtl\ltexture.h
 	"Utils.h"
 
 1678466169 c:\users\hp\documents\code\ltnc\gamebtl\button.h
@@ -31,20 +29,23 @@
 	"Button.h"
 	"LTexture.h"
 
-1681807466 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
+1682305668 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
 	"Klee.h"
 
-1681555897 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
+1682305319 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
 	"Utils.h"
 	"LTexture.h"
 	"Tile.h"
+	"Arrow.h"
+	"Enemy.h"
+	"Healthbar.h"
 
 1679246304 source:c:\users\hp\documents\code\ltnc\gamebtl\map.cpp
 	"Map.h"
 
 1679246304 c:\users\hp\documents\code\ltnc\gamebtl\map.h
 
-1681805304 c:\users\hp\documents\code\ltnc\gamebtl\utils.h
+1682249667 c:\users\hp\documents\code\ltnc\gamebtl\utils.h
 	<iostream>
 	<string>
 	<stdlib.h>
@@ -58,14 +59,16 @@
 	<SDL_image.h>
 	<SDL_ttf.h>
 	<SDL_mixer.h>
+	<cmath>
 
-1680971059 source:c:\users\hp\documents\code\ltnc\gamebtl\enemy.cpp
+1682265953 source:c:\users\hp\documents\code\ltnc\gamebtl\enemy.cpp
 	"Enemy.h"
 
-1680943967 c:\users\hp\documents\code\ltnc\gamebtl\enemy.h
+1682245754 c:\users\hp\documents\code\ltnc\gamebtl\enemy.h
 	"Utils.h"
 	"LTexture.h"
 	"Tile.h"
+	"Arrow.h"
 
 1681095229 source:c:\users\hp\documents\code\ltnc\gamebtl\utils.cpp
 	"Utils.h"
@@ -102,15 +105,17 @@
 	"LTexture.h"
 	"Buttons.h"
 
-1681195574 source:c:\users\hp\documents\code\ltnc\gamebtl\healthbar.cpp
+1682305774 source:c:\users\hp\documents\code\ltnc\gamebtl\healthbar.cpp
 	"Healthbar.h"
 
-1681199189 c:\users\hp\documents\code\ltnc\gamebtl\healthbar.h
+1682305219 c:\users\hp\documents\code\ltnc\gamebtl\healthbar.h
+	"Utils.h"
+	"LTexture.h"
 
 1681361649 c:\users\hp\documents\code\ltnc\gamebtl\timer.h
 	"Utils.h"
 
-1681361677 source:c:\users\hp\documents\code\ltnc\gamebtl\timer.cpp
+1682268893 source:c:\users\hp\documents\code\ltnc\gamebtl\timer.cpp
 	"Timer.h"
 
 1681741002 source:c:\users\hp\documents\code\ltnc\gamebtl\fireball.cpp
@@ -118,10 +123,18 @@
 
 1681741343 c:\users\hp\documents\code\ltnc\gamebtl\fireball.h
 
-1681805102 c:\users\hp\documents\code\ltnc\gamebtl\movingground.h
+1682070269 c:\users\hp\documents\code\ltnc\gamebtl\movingground.h
 	"Utils.h"
 	"Tile.h"
+	"Klee.h"
 
-1681805518 source:c:\users\hp\documents\code\ltnc\gamebtl\movingground.cpp
+1682070269 source:c:\users\hp\documents\code\ltnc\gamebtl\movingground.cpp
 	"movingGround.h"
+
+1682262055 c:\users\hp\documents\code\ltnc\gamebtl\arrow.h
+	"Utils.h"
+	"LTexture.h"
+
+1682265116 source:c:\users\hp\documents\code\ltnc\gamebtl\arrow.cpp
+	"Arrow.h"
 

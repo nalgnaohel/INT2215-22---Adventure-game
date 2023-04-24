@@ -37,14 +37,16 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="Arrow.cpp" />
+		<Unit filename="Arrow.h" />
 		<Unit filename="Buttons.cpp" />
 		<Unit filename="Buttons.h" />
 		<Unit filename="Enemy.cpp" />
 		<Unit filename="Enemy.h" />
-		<Unit filename="Fireball.cpp" />
-		<Unit filename="Fireball.h" />
 		<Unit filename="Function.cpp" />
 		<Unit filename="Function.h" />
+		<Unit filename="Healthbar.cpp" />
+		<Unit filename="Healthbar.h" />
 		<Unit filename="Klee.cpp" />
 		<Unit filename="Klee.h" />
 		<Unit filename="LTexture.cpp" />

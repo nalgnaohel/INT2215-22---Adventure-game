@@ -13,6 +13,7 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
+#include <cmath>
 using namespace std;
 
 #define mp make_pair
@@ -35,7 +36,12 @@ const int GROUND_VEL = 1;
 
 const int KLEE_FRAME_PER_SECOND = 20;
 const int KLEE_ATTACK_FRAME_PER_SECOND = 5;
-const int KLEE_ID_FRAME[9] = {5, 20, 20, 20, 15, 20, 20, 20, 20};
+const int KLEE_ID_FRAME[9] = {5, 25, 10, 20, 15, 20, 20, 20, 20};
+const int BULLET_ID_FRAME[2] = {20, 15};
+const int GHOST_ID_FRAME[2][6] = {{5, 20, 15, 15, 15, 15}, {10, 20, 20, 20, 20, 20}};
+const int TOTAL_ENEMIES = 2;
+const int ARROW_FRAME[3] = {15, 10, 10};
+
 
 const int SCREEN_WIDTH = 960; //1000
 const int SCREEN_HEIGHT = 640; //544
@@ -55,7 +61,6 @@ enum ButtonsSprite{
     BUTTON_SPRITE_MOUSE_OVER_MOTION = 3
 };
 
-//map<pair<int, int>, bool> ckTile;
 bool checkCollision(SDL_Rect& a, SDL_Rect& b);
 
 #endif

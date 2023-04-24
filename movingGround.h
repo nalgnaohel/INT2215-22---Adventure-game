@@ -2,12 +2,14 @@
 #define MOVINGGROUND_H
 #include "Utils.h"
 #include "Tile.h"
+#include "Klee.h"
 
 class movingGround
 {
     public:
         movingGround(int Lx, int Rx, int y, int lx, int rx, int ly, int ry, string dire);
-        void move(Tile* tiles[]);
+        bool onmvGround(Klee* klee);
+        void move(Tile* tiles[], Klee* klee);
         int getLT();
         int getRT();
         int getLx();
