@@ -17,6 +17,7 @@ class movingGround
         SDL_Rect getBox();
         int getly();
         int getry();
+        void setDeltaVel(int delta);
 
     private:
         int mVelX, mVelY;
@@ -24,6 +25,7 @@ class movingGround
         SDL_Rect mBox;
         int dir;
         int LT, RT;
+        int del;
         string d;
 };
 

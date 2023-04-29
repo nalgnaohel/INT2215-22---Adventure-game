@@ -23,7 +23,7 @@ bool movingGround::onmvGround(Klee* klee){
 
 void movingGround::move(Tile* tiles[], Klee* klee){
     if(d == "lr"){
-        mVelX = dir * GROUND_VEL;
+        mVelX = dir * GROUND_VEL + del;
         int x = tiles[LT]->getBox().x; int y = tiles[LT]->getBox().y;
         int x_ = x;
         if(x < lim_lx){
@@ -53,7 +53,7 @@ void movingGround::move(Tile* tiles[], Klee* klee){
     }
     else{
         bool ck = 0;
-        mVelY = dir * GROUND_VEL;
+        mVelY = dir * (GROUND_VEL + del);
         if(onmvGround(klee)){
             ck = 1;
         }
@@ -71,6 +71,7 @@ void movingGround::move(Tile* tiles[], Klee* klee){
             tiles[i]->updateBox(x, y);
             mBox.y = y;
         }
+        //cout << mBox.x << ' ' << mBox.y << '\n';
         if(ck){
             int new_y = mBox.y - klee->getKleeBox().h;
             klee->updatemvGround(new_y);
@@ -105,4 +106,8 @@ int movingGround::getly(){
 
 int movingGround::getry(){
     return lim_ry;
+}
+
+void movingGround::setDeltaVel(int delta){
+    del = delta;
 }

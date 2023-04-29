@@ -11,28 +11,40 @@ Enemy::Enemy(int lx, int y, int rx, int type_, SDL_Rect& box){
     if(type == 0){
         mEnemyVel = 3;
         mEnemyRunVel = 6;
+        exp_val = 30;
     }
     if(type == 1){
         mEnemyVel = 2;
         mEnemyRunVel = 5;
+        exp_val = 45;
     }
     frame = 0;
     dir = 1; //1: right, -1: left
-    att = 0;
+    att = 0; run = 0; walk = 1;
     health = 50; mxHealth = 50;
     if(type == 1){
         health += 25; mxHealth += 25;
     }
+    ghost_hbar = NULL;
+    ghost_hbar = new Healthbar();
+    ghost_hbar->setHbVal(mxHealth, health, 100, 50);
+    damage = 0;
 }
 
 Enemy::~Enemy(){
-    for(int i = 0; i < (int)mArrowList.size(); i++){
+    int i = 0;
+    while(i < (int)mArrowList.size()){
         Arrow* ar = mArrowList.at(i);
         if(ar != NULL){
             mArrowList.erase(mArrowList.begin() + i);
             delete ar;
             ar = NULL;
+            i--;
         }
+        i++;
+    }
+    if(ghost_hbar != NULL){
+        delete ghost_hbar;
     }
 }
 
@@ -42,8 +54,6 @@ bool Enemy::isNearKlee(SDL_Rect& kBox){
 
 void Enemy::move(int vel){
     mEnemyBox.x += dir * vel;
-    //cout <<type << ": " << mEnemyBox.x << ' ' << mEnemyLeftX << ' ' << mEnemyRightX << '\n';
-
     if(mEnemyBox.x < mEnemyLeftX){
         mEnemyBox.x = mEnemyLeftX;
         dir = -dir;
@@ -53,189 +63,10 @@ void Enemy::move(int vel){
     }
 }
 
-void Enemy::action(SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
-    if(type == 0 && spriteId % 6 != 1){
-        if(isNearKlee(kBox)){
-            //cout << mEnemyBox.x << ' ' << kBox.x << ' ' << abs(mEnemyBox.x - kBox.x) <<'\n';
-            int d;
-            if(kBox.x < mEnemyBox.x){
-                d = mEnemyBox.x - kBox.x - kBox.w;
-            }
-            else{
-                d = kBox.x - mEnemyBox.w - mEnemyBox.x;
-            }
-            //cout << d << '\n';
-            if(d <= 5){
-                //attack
-                if(!att){
-                    spriteId = 0;
-                    if(mEnemyBox.x > kBox.x){
-                        spriteId += 6;
-                    }
-                    att = 1; scream = 0; walk = 0; run = 0;
-                    frame = 0;
-                    updateEnemyBox(gEnemySpriteClips[0][spriteId][0]);
-                    damage = 0;
-                }
-                else{
-                    if(checkCollision(kBox, mEnemyBox) && frame == 2 * GHOST_ID_FRAME[0][spriteId % 6]){
-                        damage = 5;
-                    }
-                    else{
-                        damage = 0;
-                    }
-                }
-                //cout << "Attack: " << spriteId << '\n';
-            }
-            else if(d <= 10){
-                //scream
-                if(!scream){
-                    spriteId = 4;
-                    if(mEnemyBox.x > kBox.x){
-                        spriteId += 6;
-                    }
-                    //update
-                    scream = 1; att = 0; run = 0; walk = 0;
-                    frame = 0;
-                    updateEnemyBox(gEnemySpriteClips[0][spriteId][0]);
-                    damage = 0;
-                }
-                else{
-                    if(frame >= 2 * GHOST_ID_FRAME[0][spriteId % 6] && frame <= 6 * GHOST_ID_FRAME[0][spriteId % 6] && frame % GHOST_ID_FRAME[0][spriteId % 6] == 0){
-                        damage = 2;
-                    }
-                    else{
-                        damage = 0;
-                    }
-                    if(frame == GHOST_ID_FRAME[0][spriteId % 6] * gEnemySpriteClipsSize[0][spriteId] - 1){
-                        move(mEnemyRunVel);
-                    }
-                }
-                //cout << "Scream: " << spriteId << '\n';
-            }
-            else{
-                //run
-                if(kBox.x < mEnemyBox.x){
-                    dir = -1;
-                }
-                else {
-                    dir = 1;
-                }
-                att = 0; scream = 0; run = 1; walk = 0;
-                spriteId = 3;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                //cout << "Run: " << spriteId << '\n';
-                frame = 0;
-                updateEnemyBox(gEnemySpriteClips[0][spriteId][0]);
-                damage = 0;
-                move(mEnemyRunVel);
-
-            }
-        }
-        else{
-            if(!walk){
-                walk = 1; run = 0; att = 0; scream = 0;
-                frame = 0;
-                spriteId = 5;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                updateEnemyBox(gEnemySpriteClips[0][spriteId][0]);
-            }
-            else{
-                spriteId = 5;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                updateEnemyBox(gEnemySpriteClips[0][spriteId][0]);
-            }
-            damage = 0;
-            //cout << "Walk: " << spriteId << '\n';
-            move(mEnemyVel);
-        }
-    }
-    if(type == 1 && spriteId % 6 != 1){
-        if(isNearKlee(kBox)){
-            int d;
-            if(kBox.x < mEnemyBox.x){
-                d = mEnemyBox.x - kBox.x - kBox.w;
-            }
-            else{
-                d = kBox.x - mEnemyBox.w - mEnemyBox.x;
-            }
-            //cout << d << '\n';
-            if(d <= 10){
-                //scream
-                if(!scream){
-                    scream = 1; att = 0; run = 0; walk = 0;
-                    spriteId = 4;
-                    if(mEnemyBox.x > kBox.x){
-                        spriteId += 6;
-                    }
-                    frame = 0;
-                    updateEnemyBox(gEnemySpriteClips[1][spriteId][0]);
-                    damage = 0;
-                }
-                else{
-                    if(frame >= 2 * GHOST_ID_FRAME[1][spriteId % 6] && frame < gEnemySpriteClipsSize[1][spriteId] * GHOST_ID_FRAME[1][spriteId % 6] && frame % (GHOST_ID_FRAME[1][spriteId % 6] / 2) == 0){
-                        damage = 4;
-                    }
-                    else{
-                        damage = 0;
-                    }
-                    if(frame == GHOST_ID_FRAME[1][spriteId % 6] * gEnemySpriteClipsSize[1][spriteId] - 1){
-                        move(mEnemyRunVel);
-                    }
-                }
-            }
-            else{
-                //run
-                if(kBox.x < mEnemyBox.x){
-                    dir = -1;
-                }
-                else {
-                    dir = 1;
-                }
-                att = 0; scream = 0; run = 1; walk = 0;
-                spriteId = 3;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                //cout << "Run: " << spriteId << '\n';
-                frame = 0;
-                updateEnemyBox(gEnemySpriteClips[1][spriteId][0]);
-                damage = 0;
-                move(mEnemyRunVel);
-            }
-        }
-        else{
-            if(!walk){
-                walk = 1; run = 0; att = 0; scream = 0;
-                frame = 0;
-                spriteId = 5;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                updateEnemyBox(gEnemySpriteClips[1][spriteId][0]);
-            }
-            else{
-                spriteId = 5;
-                if(dir < 0){
-                    spriteId += 6;
-                }
-                updateEnemyBox(gEnemySpriteClips[1][spriteId][0]);
-            }
-            damage = 0;
-            //cout << "Walk: " << spriteId << '\n';
-            move(mEnemyVel);
-        }
-    }
-}
-
-void Enemy::render(LTexture& gTEnemy, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera){
+void Enemy::render(LTexture& gTEnemyHb, LTexture& gTEnemyHbBg, SDL_Rect (&gEnemyHbClips)[2], LTexture& gTEnemy, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera){
     gTEnemy.render(mEnemyBox.x - camera.x, mEnemyBox.y - camera.y, gRenderer, clip);
+    ghost_hbar->setHbVal(mxHealth, health, mEnemyBox.x - camera.x - 10, mEnemyBox.y - camera.y - 20);
+    ghost_hbar->render(0, gRenderer, gTEnemyHb, gTEnemyHbBg, gEnemyHbClips);
 }
 
 int Enemy::getEnemyVel(){
@@ -264,7 +95,97 @@ void Enemy::updateEnemyBox(SDL_Rect& box){
     mEnemyBox.y = gr - mEnemyBox.h;
 }
 
-void Enemy::updateFrame(SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
+void Enemy::action(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
+    if(spriteId % 6 == 1 || (spriteId % 6 == 2 && frame < gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2])){
+        return;
+    }
+    if(checkCollision(kBox, mEnemyBox)){
+        if(type == 0){
+            if(!att){
+                spriteId = 0;
+                if(dir < 0){
+                    spriteId = 6;
+                }
+                frame = 0; att = 1; walk = 0; run = 0;
+                damage = 0;
+                updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][spriteId % 6]]);
+            }
+            else{
+                if(frame == 2 * GHOST_ID_FRAME[0][0]){
+                    Mix_PlayChannel(-1, stab, 0);
+                    damage = 5;
+                    //cout << "Knife: " << damage << '\n';
+                }
+                else{
+                    damage = 0;
+                }
+            }
+        }
+        else{
+            if(!att){
+                spriteId = 4;
+                if(dir < 0){
+                    spriteId = 10;
+                }
+                frame = 0; damage = 0;
+                att = 1; walk = 0; run = 0;
+                updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][spriteId % 6]]);
+            }
+            else{
+                if(frame == 2 * GHOST_ID_FRAME[1][4]){
+                    Mix_PlayChannel(-1, ghost_att, 0);
+                    damage = 5;
+                    // << "Scream damage " << damage << '\n';
+                }
+                else{
+                    damage = 0;
+                }
+            }
+        }
+    }
+    else if(isNearKlee(kBox)){
+        if(kBox.x < mEnemyBox.x){
+            spriteId = 9; dir = -1;
+            if(!run){
+                frame = 0; att = 0; run = 1; walk = 0;
+            }
+            damage = 0;
+            move(mEnemyRunVel);
+            updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][spriteId % 6]]);
+        }
+        else{
+            spriteId = 3; dir = 1;
+            if(!run){
+                frame = 0; att = 0; run = 1; walk = 0;
+            }
+            damage = 0; move(mEnemyRunVel);
+            updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][spriteId % 6]]);
+        }
+    }
+    else{
+        if(!walk){
+            spriteId = 5;
+            if(dir < 0){
+                spriteId += 6;
+            }
+            updateEnemyBox(gEnemySpriteClips[type][spriteId][0]);
+            frame = 0; att = 0; run = 0; walk = 1;
+            damage = 0;
+            move(mEnemyVel);
+        }
+        else{
+            spriteId = 5;
+            if(dir < 0){
+                spriteId += 6;
+            }
+            move(mEnemyVel);
+            damage = 0;
+            updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][spriteId % 6]]);
+        }
+    }
+}
+
+void Enemy::updateFrame(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
     //{"Attack_2", "Dead", "Hurt", "Run", "Scream", "Walk"};
     if(spriteId % 6 == 1){
         frame++;
@@ -274,9 +195,12 @@ void Enemy::updateFrame(SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpr
         updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][1]]);
     }
     else if(spriteId % 6 == 2){
+        //cout << gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2] <<  "    Hurt!Cur frame:          " << frame << '\n';
         frame++;
-        if(frame >= gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2]){
-            spriteId = 5; frame = 0;
+        if(frame == gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2]){
+            //cout << "Change!:\n";
+            action(stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
+
         }
         updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][2]]);
     }
@@ -289,16 +213,20 @@ void Enemy::updateFrame(SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpr
     }
 }
 
-void Enemy::updateHealth(int d, SDL_Rect (&gEnemySpriteClips)[2][12][7]){
+void Enemy::updateHealth(Mix_Chunk* ghost_die[2], int d, SDL_Rect (&gEnemySpriteClips)[2][12][7]){
     health -= d;
     if(health <= 0){
         //die
-        spriteId = 1;
-        if(dir < 0) spriteId += 6;
-        frame = 0;
-        updateEnemyBox(gEnemySpriteClips[type][spriteId][0]);
+        if(spriteId % 6 != 1){
+            spriteId = 1;
+            if(dir < 0) spriteId += 6;
+            frame = 0;
+            updateEnemyBox(gEnemySpriteClips[type][spriteId][0]);
+            Mix_PlayChannel(-1, ghost_die[type], 0);
+        }
     }
     else{
+        prev_state = spriteId;
         spriteId = 2;
         if(dir < 0) spriteId += 6;
         frame = 0;
@@ -308,4 +236,8 @@ void Enemy::updateHealth(int d, SDL_Rect (&gEnemySpriteClips)[2][12][7]){
 
 int Enemy::getHealth(){
     return health;
+}
+
+int Enemy::getExp_val(){
+    return exp_val;
 }

@@ -36,12 +36,12 @@ const int GROUND_VEL = 1;
 
 const int KLEE_FRAME_PER_SECOND = 20;
 const int KLEE_ATTACK_FRAME_PER_SECOND = 5;
-const int KLEE_ID_FRAME[9] = {5, 25, 10, 20, 15, 20, 20, 20, 20};
+const int KLEE_ID_FRAME[9] = {5, 25, 10, 20, 15, 10, 15, 20, 20};
 const int BULLET_ID_FRAME[2] = {20, 15};
-const int GHOST_ID_FRAME[2][6] = {{5, 20, 15, 15, 15, 15}, {10, 20, 20, 20, 20, 20}};
+const int GHOST_ID_FRAME[2][6] = {{10, 20, 15, 15, 15, 15}, {10, 20, 20, 20, 20, 20}};
 const int TOTAL_ENEMIES = 2;
 const int ARROW_FRAME[3] = {15, 10, 10};
-
+const int EXP_LIM = 50;
 
 const int SCREEN_WIDTH = 960; //1000
 const int SCREEN_HEIGHT = 640; //544
@@ -53,6 +53,8 @@ const int LEVEL_HEIGHT = 640;
 const int TOTAL_MENU_BUTTONS = 2;
 const int MENU_BUTTON_WIDTH = 200;
 const int MENU_BUTTON_HEIGHT = 52;
+
+const int INSTR_LENGTH = 13;
 
 enum ButtonsSprite{
     BUTTON_SPRITE_MOUSE_OUT = 0,

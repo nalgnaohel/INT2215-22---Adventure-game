@@ -9,8 +9,6 @@ Buttons::Buttons(int w, int h)
 }
 
 Buttons::~Buttons(){
-    mButtonBox.x = 0; mButtonBox.y = 0;
-    buttonName = "";
     mTButtonName.free();
 }
 

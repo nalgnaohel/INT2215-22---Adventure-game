@@ -4,6 +4,7 @@
 #include "LTexture.h"
 #include "Tile.h"
 #include "Arrow.h"
+#include "Healthbar.h"
 
 class Enemy
 {
@@ -12,22 +13,24 @@ class Enemy
         ~Enemy();
         bool isNearKlee(SDL_Rect& kBox);
         void move(int vel);
-        void action(SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
-        void render(LTexture& gTEnemy, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
+        void action(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
+        void render(LTexture& gTEnemyHb, LTexture& gTEnemyHbBg, SDL_Rect (&gEnemyHbClips)[2], LTexture& gTEnemy, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
         void updateEnemyBox(SDL_Rect& box);
         int getEnemyVel();
         SDL_Rect getEnemyBox();
         int getEnemyDamage();
         int getEnemyLeftX();
         int getEnemyRightX();
-        void updateHealth(int d, SDL_Rect (&gEnemySpriteClips)[2][12][7]);
+        int getExp_val();
+        void updateHealth(Mix_Chunk* ghost_die[2], int d, SDL_Rect (&gEnemySpriteClips)[2][12][7]);
         int getHealth();
         int type;
         int spriteId;
         int frame;
         int dir;
         vector<Arrow*> mArrowList;
-        void updateFrame(SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
+        Healthbar* ghost_hbar;
+        void updateFrame(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kbox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
 
     private:
         int mEnemyLeftX, mEnemyRightX;
@@ -38,6 +41,8 @@ class Enemy
         bool att, scream, run, walk;
         bool fLeft, fRight;
         int gr;
+        int exp_val;
+        int prev_state;
         int health, mxHealth;
 };
 

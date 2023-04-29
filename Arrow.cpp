@@ -84,5 +84,5 @@ void Arrow::updateFrame(SDL_Rect (&gArrowSpriteClips)[6][9], int (&gArrowSpriteC
         }
         setArrowBox(mBox.x, mBox.y, gArrowSpriteClips);
     }
-    cout << type << ": " << frame << '\n';
+    //cout << type << ": " << frame << '\n';
 }
