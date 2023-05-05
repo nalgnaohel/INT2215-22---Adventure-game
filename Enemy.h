@@ -13,7 +13,7 @@ class Enemy
         ~Enemy();
         bool isNearKlee(SDL_Rect& kBox);
         void move(int vel);
-        void action(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
+        void action(Mix_Music* playMusic_fight, Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
         void render(LTexture& gTEnemyHb, LTexture& gTEnemyHbBg, SDL_Rect (&gEnemyHbClips)[2], LTexture& gTEnemy, SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
         void updateEnemyBox(SDL_Rect& box);
         int getEnemyVel();
@@ -30,7 +30,7 @@ class Enemy
         int dir;
         vector<Arrow*> mArrowList;
         Healthbar* ghost_hbar;
-        void updateFrame(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kbox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
+        void updateFrame(Mix_Music* playMusic_fight, Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kbox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]);
 
     private:
         int mEnemyLeftX, mEnemyRightX;

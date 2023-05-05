@@ -95,7 +95,7 @@ void Enemy::updateEnemyBox(SDL_Rect& box){
     mEnemyBox.y = gr - mEnemyBox.h;
 }
 
-void Enemy::action(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
+void Enemy::action(Mix_Music* playMusic_fight, Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
     if(spriteId % 6 == 1 || (spriteId % 6 == 2 && frame < gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2])){
         return;
     }
@@ -185,7 +185,7 @@ void Enemy::action(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect& kBox, SDL_Re
     }
 }
 
-void Enemy::updateFrame(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
+void Enemy::updateFrame(Mix_Music* playMusic_fight, Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kBox, SDL_Rect (&gEnemySpriteClips)[2][12][7], int (&gEnemySpriteClipsSize)[2][12]){
     //{"Attack_2", "Dead", "Hurt", "Run", "Scream", "Walk"};
     if(spriteId % 6 == 1){
         frame++;
@@ -199,7 +199,7 @@ void Enemy::updateFrame(Mix_Chunk* stab, Mix_Chunk* ghost_att, SDL_Rect &kBox, S
         frame++;
         if(frame == gEnemySpriteClipsSize[type][2] * GHOST_ID_FRAME[type][2]){
             //cout << "Change!:\n";
-            action(stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
+            action(playMusic_fight, stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
 
         }
         updateEnemyBox(gEnemySpriteClips[type][spriteId][frame / GHOST_ID_FRAME[type][2]]);

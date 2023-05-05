@@ -47,7 +47,7 @@ const int SCREEN_WIDTH = 960; //1000
 const int SCREEN_HEIGHT = 640; //544
 const int SCREEN_BPP = 32;
 
-const int LEVEL_WIDTH = 3584;
+const int LEVEL_WIDTH[2] = {3584, 7168};
 const int LEVEL_HEIGHT = 640;
 
 const int TOTAL_MENU_BUTTONS = 2;

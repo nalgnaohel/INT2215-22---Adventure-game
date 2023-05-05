@@ -7,7 +7,7 @@
 class movingGround
 {
     public:
-        movingGround(int Lx, int Rx, int y, int lx, int rx, int ly, int ry, string dire);
+        movingGround(int curLevel, int Lx, int Rx, int y, int lx, int rx, int ly, int ry, string dire);
         bool onmvGround(Klee* klee);
         void move(Tile* tiles[], Klee* klee);
         int getLT();

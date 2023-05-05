@@ -44,6 +44,10 @@ LTexture gTypeTiles[TOTAL_TILE_TYPES];
 LTexture gTEnemyHb;
 LTexture gTEnemyHbBg;
 LTexture gTHeart;
+LTexture gTLevelDialog;
+LTexture gTUlt;
+LTexture gTUltCD;
+LTexture gTUltTime;
 
 TTF_Font* gFont = NULL;
 TTF_Font* gTitleFont = NULL;
@@ -69,8 +73,9 @@ vector<Buttons*> menuStart;
 string lv;
 vector<Enemy*> ghost[TOTAL_ENEMIES];
 vector<pair<pair<int, int>, int>> ground;
-vector<int> mvGroundId;
+vector<int> udId, lrId;
 vector<movingGround*> upDown;
+vector<movingGround*> leftRight;
 vector<Buttons*> gameOverButtons;
 vector<Buttons*> failedButtons;
 vector<Buttons*> wonButtons;
@@ -96,6 +101,7 @@ string fileArrow[2] = {"Charge_1", "Charge_2"};
 string fileGhost0[6] = {"Attack_2", "Dead", "Hurt", "Run", "Scream", "Walk"};
 string fileGhost1[6] = {"Attack_3", "Dead", "Hurt", "Run", "Scream", "Walk"};
 string status[6] = {"Attack_2", "Dead", "Hurt", "Run", "Scream", "Walk"};
+string levels[2] = {"1-1", "1-2"};
 
 bool isGround(string typeTile){
     int id = stoi(typeTile);
@@ -133,11 +139,16 @@ int main(int argc, char* argv[]){
             failButton->setButtonName("Give up!", btmpColor, gFont);
             failedButtons.pb(failButton);
 
-            Buttons* wonButton = NULL;
-            wonButton = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
-            wonButton->setPosition(SCREEN_WIDTH / 2 - MENU_BUTTON_WIDTH / 2, 350);
-            wonButton->setButtonName("End of a journey!", btmpColor, gFont);
-            wonButtons.pb(wonButton);
+            Buttons* wonButton1 = NULL;
+            wonButton1 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
+            wonButton1->setPosition(SCREEN_WIDTH / 2 - MENU_BUTTON_WIDTH / 2, 350);
+            wonButton1->setButtonName("Next level", btmpColor, gFont);
+            wonButtons.pb(wonButton1);
+            Buttons* wonButton2 = NULL;
+            wonButton2 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
+            wonButton2->setPosition(SCREEN_WIDTH / 2 - MENU_BUTTON_WIDTH / 2, wonButton1->getButtonBox().y + MENU_BUTTON_HEIGHT + 50);
+            wonButton2->setButtonName("Leave...", btmpColor, gFont);
+            wonButtons.pb(wonButton2);
 
             Buttons* goButton1 = NULL;
             goButton1 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
@@ -153,13 +164,13 @@ int main(int argc, char* argv[]){
             //show menu
             int life = 3;
             int gameState = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
-            if(gameState){
+            if(gameState == -1){
                 play = 0; isRunning = 0;
             }
             else{
                 life = 3;
             }
-            lv = "1-1";
+            int curLevelId = 0;
             //run game
             SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderClear(gRenderer);
@@ -172,6 +183,7 @@ int main(int argc, char* argv[]){
                 bool died = 0;
                 Timer fps_timer;
                 if(!already){
+                    lv = levels[curLevelId];
                     if(!setTiles(tiles, lv, ghost)){
                         play = 0; isRunning = 0;
                         cout << "Unable to load map!\n";
@@ -179,20 +191,30 @@ int main(int argc, char* argv[]){
                     already = 1;
                 }
                 else{
-                    cout << "Current level: " << lv << ' ' << "Life: " << life << '\n';
+                    //cout << "Current level: " << lv << ' ' << "Life: " << life << '\n';
                     klee = new Klee(gKleeSpriteClips[3][0]);
                     //cout << klee->getKleeHealth();
-                    klee->life = life; cout << life << ' ';
+                    klee->life = life; //cout << life << ' ';
                     klee->TOTAL_TILES = tot_tiles;
-                    already = 1; int st_g;
-                    bool normal = 1; bool battle = 0;
+                    already = 1;
+                    if(lv != "1-1"){
+                        cout << upDown.size() << '\n';
+                        for(int i = 0; i < (int)upDown.size(); i++){
+                            cout << udId[i] << ":    " <<  ground[udId[i]].fi.fi << ' ' << ground[udId[i]].fi.se << ' ' << ground[udId[i]].se << '\n';
+                        }
+                        cout << leftRight.size() << '\n';
+                        for(int i = 0; i < (int)leftRight.size(); i++){
+                            cout << lrId[i] << ":    " << ground[lrId[i]].fi.fi << ' ' << ground[lrId[i]].fi.se << ' ' << ground[lrId[i]].se << '\n';
+                        }
+                        cout << '\n';
+                    }
                     Mix_PlayMusic(playMusic_normal, -1); bool pause = 0;
                     while(isRunning){
                         //int startTime = SDL_GetTicks();
                         if(!fps_timer.isStarted()){
-                            st_g = SDL_GetTicks();
+                            fps_timer.start();
                         }
-                        fps_timer.start();
+                        int st_fr = SDL_GetTicks();
 
                         SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
                         SDL_RenderClear(gRenderer);
@@ -211,17 +233,27 @@ int main(int argc, char* argv[]){
                                 if(event.key.keysym.sym == SDLK_x){
                                     if(!pause){
                                         Mix_PlayChannel(-1, page, 0);
-                                    int gstate = showInstruction(page, gTBackground, gTEndLevelDialog, gTInstr, gRenderer);
-                                    if(gstate == 1){
-                                        isRunning = 0;
-                                    }
+                                        int gstate = showInstruction(page, gTBackground, gTEndLevelDialog, gTInstr, gRenderer);
+                                        if(gstate == 1){
+                                            isRunning = 0;
+                                        }
                                     }
                                 }
                                 if(event.key.keysym.sym == SDLK_p){
                                     pause = !pause;
+                                    if(pause){
+                                        fps_timer.stop();
+                                        fps_timer.pause();
+                                    }
+                                    else{
+                                        fps_timer.unpause();
+                                    }
+
                                 }
                             }
-                            if(!pause) klee->handleKleeEvent(event, gKleeSpriteClips, ground, kFeet);
+                            if(!pause){
+                                klee->handleKleeEvent(event, gKleeSpriteClips, ground, kFeet);
+                            }
                         }
                         if(pause){
                             SDL_Color pauseColor = {70, 12, 12};
@@ -237,89 +269,103 @@ int main(int argc, char* argv[]){
                             else{
                                 gTPauseText[1].render(SCREEN_WIDTH / 2 - gTPauseText[1].getWidth() / 2, SCREEN_HEIGHT / 2 + 15, gRenderer);
                             }
+                            fps_timer.pause();
                         }
                         if(!pause){
+                            //cout << 33 << '\n';
                             for(int i = 0; i < (int)upDown.size(); i++){
-                            upDown[i]->move(tiles, klee);
-                            ground[mvGroundId[i]].fi.fi = upDown[i]->getLx();
-                            ground[mvGroundId[i]].fi.se = upDown[i]->getRx();
-                            ground[mvGroundId[i]].se = upDown[i]->getBox().y;
-                        }
-                        klee->handleArrowList(ghost_die, gRenderer, gTArrow, gArrowSpriteClips, gArrowSpriteClipsSize, camera, ghost, gEnemySpriteClips);
-                        klee->move(tiles, ground, gKleeSpriteClips, kFeet);
-                        klee->setCamera(camera);
-                        if(!died){
-                            for(int i = 0; i < TOTAL_ENEMIES; i++){
-                                int j = 0;
-                                while(j < (int)ghost[i].size()){
-                                    SDL_Rect kBox = klee->getKleeBox();
-                                    //cout << i << ' ' << j << ":    " ;
-                                    //int cur = ghost[i][j]->spriteId;
-                                    //cout << ghost[i][j]->frame << ' ' << cur << ' ' << status[cur % 6] << '\n';
-                                    ghost[i][j]->action(stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
-                                    klee->updateKleeHealth(player_hurt, ghost[i][j]->getEnemyDamage(), gKleeSpriteClips);
-                                    //cout << "Klee Health: " << klee->getKleeHealth() << '\n';
-                                    if(klee->getKleeHealth() <= 0){
-                                        died = 1; klee->spriteId = 1; klee->kleeFrame = 0;
+                                upDown[i]->move(tiles, klee);
+                                ground[udId[i]].fi.fi = upDown[i]->getLx();
+                                ground[udId[i]].fi.se = upDown[i]->getRx();
+                                ground[udId[i]].se = upDown[i]->getBox().y;
+                                //cout << udId[i] << ":    " <<  ground[udId[i]].fi.fi << ' ' << ground[udId[i]].fi.se << ' ' << ground[udId[i]].se << '\n';
+                            }
+                            //cout <<  "----------------------" << '\n';
+                            for(int i = 0; i < (int)leftRight.size(); i++){
+                                leftRight[i]->move(tiles, klee);
+                                ground[lrId[i]].fi.fi = leftRight[i]->getBox().x;
+                                ground[lrId[i]].fi.se = leftRight[i]->getBox().x + leftRight[i]->getBox().w;
+                                ground[lrId[i]].se = leftRight[i]->getBox().y;
+                                //if(i == 1){
+                                //cout << lrId[i] << ":    " << ground[lrId[i]].fi.fi << ' ' << ground[lrId[i]].fi.se << ' ' << ground[lrId[i]].se << '\n';
+                                //}
+                            }
+                            klee->handleArrowList(ghost_die, gRenderer, gTArrow, gArrowSpriteClips, gArrowSpriteClipsSize, camera, ghost, gEnemySpriteClips);
+                            klee->move(curLevelId, tiles, ground, gKleeSpriteClips, kFeet);
+                            klee->setCamera(curLevelId, camera);
+                            if(!died){
+                                for(int i = 0; i < TOTAL_ENEMIES; i++){
+                                    int j = 0;
+                                    while(j < (int)ghost[i].size()){
                                         SDL_Rect kBox = klee->getKleeBox();
-                                        klee->updateKleeBox(kBox, ground, kFeet);
-                                        Mix_PlayChannel(-1, die, 0);
+                                        //cout << i << ' ' << j << ":    " ;
+                                        //cout << ghost[i][j]->frame << ' ' << cur << ' ' << status[cur % 6] << '\n';
+                                        ghost[i][j]->action(playMusic_fight, stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
+                                        klee->updateKleeHealth(player_hurt, ghost[i][j]->getEnemyDamage(), gKleeSpriteClips);
+                                        //cout << "Klee Health: " << klee->getKleeHealth() << '\n';
+                                        if(klee->getKleeHealth() <= 0){
+                                            died = 1; klee->spriteId = 1; klee->kleeFrame = 0;
+                                            SDL_Rect kBox = klee->getKleeBox();
+                                            klee->updateKleeBox(kBox, ground, kFeet);
+                                            Mix_PlayChannel(-1, die, 0);
+                                            break;
+                                        }
+                                        if(klee->spriteId % 9 == 0 && klee->kleeFrame == 4 * KLEE_ID_FRAME[klee->spriteId % 9]){
+                                            SDL_Rect dam;
+                                            if(klee->spriteId == 0){
+                                                dam = {klee->getKleeBox().x, klee->getKleeBox().y - 36, klee->getKleeBox().w + 36, klee->getKleeBox().h + 72};
+                                            }
+                                            else{
+                                                dam = {klee->getKleeBox().x - 36, klee->getKleeBox().y - 36, klee->getKleeBox().w + 36, klee->getKleeBox().h + 72};
+                                            }
+                                            SDL_Rect eBox = ghost[i][j]->getEnemyBox();
+                                            if(checkCollision(dam, eBox)){
+                                                //cout << "Ghost" << i << ' ' << j << " - " << "Health: ";
+                                                ghost[i][j]->updateHealth(ghost_die, 8, gEnemySpriteClips);
+                                                //cout << ghost[i][j]->getHealth() << '\n';
+                                            }
+                                        }
+                                        int fr = ghost[i][j]->frame;
+                                        if(ghost[i][j]->spriteId % 6 == 1 && fr == gEnemySpriteClipsSize[ghost[i][j]->type][1] * GHOST_ID_FRAME[ghost[i][j]->type][1] - 1){
+                                            //delete this ghost
+                                            //cout << "Bye  " << i << ' ' << j << '\n';
+                                            klee->updateExp(level_up, ghost[i][j]->getExp_val());
+                                            life = klee->life;
+                                            Enemy* e = ghost[i].at(j);
+                                            ghost[i].erase(ghost[i].begin() + j);
+                                            delete e;
+                                            e = NULL;
+                                            j--;
+                                        }
+                                        j++;
+                                    }
+                                    if(died){
                                         break;
                                     }
-                                    if(klee->spriteId % 9 == 0 && klee->kleeFrame == 4 * KLEE_ID_FRAME[klee->spriteId % 9]){
-                                        SDL_Rect dam;
-                                        if(klee->spriteId == 0){
-                                            dam = {klee->getKleeBox().x, klee->getKleeBox().y - 36, klee->getKleeBox().w + 36, klee->getKleeBox().h + 72};
-                                        }
-                                        else{
-                                            dam = {klee->getKleeBox().x - 36, klee->getKleeBox().y - 36, klee->getKleeBox().w + 36, klee->getKleeBox().h + 72};
-                                        }
-                                        SDL_Rect eBox = ghost[i][j]->getEnemyBox();
-                                        if(checkCollision(dam, eBox)){
-                                            //cout << "Ghost" << i << ' ' << j << " - " << "Health: ";
-                                            ghost[i][j]->updateHealth(ghost_die, 8, gEnemySpriteClips);
-                                            //cout << ghost[i][j]->getHealth() << '\n';
-                                        }
-                                    }
-                                    int fr = ghost[i][j]->frame;
-                                    if(ghost[i][j]->spriteId % 6 == 1 && fr == gEnemySpriteClipsSize[ghost[i][j]->type][1] * GHOST_ID_FRAME[ghost[i][j]->type][1] - 1){
-                                        //delete this ghost
-                                        //cout << "Bye  " << i << ' ' << j << '\n';
-                                        klee->updateExp(level_up, ghost[i][j]->getExp_val());
-                                        life = klee->life;
-                                        Enemy* e = ghost[i].at(j);
-                                        ghost[i].erase(ghost[i].begin() + j);
-                                        delete e;
-                                        e = NULL;
-                                        j--;
-                                    }
-                                    j++;
-                                }
-                                if(died){
-                                    break;
                                 }
                             }
-                        }
-                        //cout << klee->onGround(ground) << ' ' << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->getKleeHealth() << ' ';
-                        //cout << '\n';
-                        if((died && klee->kleeFrame == gKleeSpriteClipsSize[1] * KLEE_ID_FRAME[1] - 1) || klee->getKleeBox().y > SCREEN_HEIGHT){
-                            gameOver = true;
-                            life--;
-                        }
+                            //cout << klee->onGround(ground) << ' ' << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->getKleeHealth() << ' ';
+                            //cout << '\n';
+                            if((died && klee->kleeFrame == gKleeSpriteClipsSize[1] * KLEE_ID_FRAME[1] - 1)){
+                                gameOver = true;
+                                life--;
+                            }
+                            if(klee->getKleeBox().y > SCREEN_HEIGHT){
+                                Mix_PlayChannel(-1, fall, 0);
+                                gameOver = true; life--;
+                            }
                         }
                         if(gameOver){
                             isRunning = false;
                             fps_timer.stop();
                             fps_timer.pause();
                         }
-                        if(klee->getKleeBox().x + klee->getKleeBox().w >= LEVEL_WIDTH){
+                        if(klee->getKleeBox().x + klee->getKleeBox().w >= LEVEL_WIDTH[curLevelId]){
                             won = true; isRunning = false;
                             fps_timer.stop();
                             fps_timer.pause();
                         }
-
-
-                        //cout << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->onGround(ground) << '\n';
+                            //cout << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->onGround(ground) << '\n';
                         SDL_Rect* currentClip;
                         currentClip = &gKleeSpriteClips[klee->spriteId][klee->kleeFrame / KLEE_ID_FRAME[klee->spriteId % 9]];
                         klee->render(gTKlee[klee->spriteId], gTKleeHb, gTKleeHbBackground, gKleeHbClips, gTKleeExp, gTKleeExpBg, gKleeExpbClips, gRenderer, currentClip, camera);
@@ -330,37 +376,48 @@ int main(int argc, char* argv[]){
                                 ghost[i][j]->render(gTEnemyHb, gTEnemyHbBg, gEnemyHbClips, gTEnemy[i][sp], gRenderer, clip, camera);
                             }
                         }
-                        SDL_Rect signBox = {LEVEL_WIDTH - gTEndLevelSign.getWidth(), LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT, gTEndLevelSign.getWidth(), gTEndLevelSign.getHeight()};
+                        SDL_Rect signBox = {LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth(), LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT, gTEndLevelSign.getWidth(), gTEndLevelSign.getHeight()};
                         if(checkCollision(camera, signBox)){
-                            gTEndLevelSign.render(LEVEL_WIDTH - gTEndLevelSign.getWidth() - camera.x - 10, LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT - camera.y, gRenderer);
+                            gTEndLevelSign.render(LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth() - camera.x - 10, LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT - camera.y, gRenderer);
                         }
-                        int now_time = fps_timer.getCurTicks();
-                        Uint32 elasped = SDL_GetTicks() - st_g;
+                        int now_time = SDL_GetTicks() - st_fr;
+                        int elasped = fps_timer.getCurTicks();
                         elasped /= 1000;
                         string time_ = "Time: " + to_string(elasped);
                         SDL_Color titleColor = {255, 255, 255};
+                        if(klee->s_cd){
+                            int scd = klee->s_cd / FRAME_PER_SECOND; string cd = to_string(scd);
+                            if(!gTUltTime.loadFromRenderedText(cd, titleColor, gRenderer, gFont)){
+                                break;
+                            }
+                            else{
+                                gTUltTime.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth(), 10, gRenderer);
+                                gTUlt.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth() - gTUlt.getWidth() - 10, 10, gRenderer);
+                                gTUltCD.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth() - gTUlt.getWidth() - 10, 10, gRenderer);
+                            }
+                        }
                         if(!gTTime.loadFromRenderedText(time_, titleColor, gRenderer, gFont)){
                             cout << "Unable to display time\n"; break;
                         }
                         else{
                             gTTime.render(10, 10, gRenderer);
                         }
-                        string extp_text = "Exp: ";
-                        if(!gTExpText.loadFromRenderedText(extp_text, titleColor, gRenderer, gFont)){
-                            break;
-                        }
-                        else{
-                            gTExpText.render(SCREEN_WIDTH / 2, 10, gRenderer);
-                        }
-                        string heart_text = "Life: " + to_string(life);
-                        if(!gTExpText.loadFromRenderedText(heart_text, titleColor, gRenderer, gFont)){
-                            break;
-                        }
-                        else{
-                            gTExpText.render(SCREEN_WIDTH / 2, 30 + gTExpText.getHeight(), gRenderer);
-                        }
-                        //int cur_heartx = SCREEN_WIDTH / 2 + gTExpText.getWidth() + 15;
-                        cout << life << '\n';
+                            string extp_text = "Exp: ";
+                            if(!gTExpText.loadFromRenderedText(extp_text, titleColor, gRenderer, gFont)){
+                                break;
+                            }
+                            else{
+                                gTExpText.render(SCREEN_WIDTH / 2, 10, gRenderer);
+                            }
+                            string heart_text = "Life: " + to_string(life);
+                            if(!gTExpText.loadFromRenderedText(heart_text, titleColor, gRenderer, gFont)){
+                                break;
+                            }
+                            else{
+                                gTExpText.render(SCREEN_WIDTH / 2, 30 + gTExpText.getHeight(), gRenderer);
+                            }
+                            //int cur_heartx = SCREEN_WIDTH / 2 + gTExpText.getWidth() + 15;
+                            //cout << life << '\n';
                         int frameTime = 1000 / FRAME_PER_SECOND;
                         if(now_time < frameTime){
                             int dl = frameTime - now_time;
@@ -368,18 +425,18 @@ int main(int argc, char* argv[]){
                         }
                         SDL_RenderPresent(gRenderer);
 
-                        //update frame
-                        //Klee first
+                            //update frame
+                            //Klee first
                         if(!pause){
                             klee->updateFrame(gKleeSpriteClips, gKleeSpriteClipsSize, ground, gArrowSpriteClips, camera, kFeet);
                         //Now the enemies
-                        SDL_Rect kBox = klee->getKleeBox();
-                        for(int i = 0; i < TOTAL_ENEMIES; i++){
-                            for(int j = 0; j < (int)ghost[i].size(); j++){
-                                ghost[i][j]->updateFrame(stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
+                            SDL_Rect kBox = klee->getKleeBox();
+                            for(int i = 0; i < TOTAL_ENEMIES; i++){
+                                for(int j = 0; j < (int)ghost[i].size(); j++){
+                                    ghost[i][j]->updateFrame(playMusic_fight, stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
+                                }
                             }
-                        }
-                        klee->s_cd = max(0, klee->s_cd - 1);
+                            klee->s_cd = max(0, klee->s_cd - 1);
                         }
                     }
                     //gameover or win
@@ -391,7 +448,7 @@ int main(int argc, char* argv[]){
                             if(gState == 0){
                                 SDL_RenderClear(gRenderer);
                                 int nxtState = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
-                                if(nxtState){
+                                if(nxtState == -1){
                                     isRunning = 0; play = 0;
                                 }
                                 else{
@@ -414,8 +471,8 @@ int main(int argc, char* argv[]){
                                     isRunning = 1; life = 3; already = 0;gameOver = 0;
                                     clear(tiles);
                                 }
-                                if(nxt_state){
-                                    isRunning = 1; play = 0;
+                                if(nxt_state == -1){
+                                    isRunning = 0; play = 0;
                                 }
                             }
                             else{ //keep playing
@@ -429,12 +486,17 @@ int main(int argc, char* argv[]){
                     if(won){
                         string title = "You won!";
                         int gState = showClearLevel(wonMusic, title, gTBackground, gTEndLevelDialog, gTWinText, gFont, gTMenuButtonsSpriteSheet, gRenderer, wonButtons);
-                        if(gState){
+                        if(gState == -1){
                             play = 0; isRunning = 0;
+                        }
+                        else if(gState == 0 && curLevelId < 1) {
+                            curLevelId++; life = klee->life;
+                            isRunning = 1; won = 0; already = 0;
+                            clear(tiles);
                         }
                         else{
                             int nxt_state = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
-                            if(nxt_state){
+                            if(nxt_state == -1){
                                 isRunning = 0; play = 0;
                             }
                             if(!nxt_state){
@@ -529,7 +591,7 @@ bool loadMedia(){
             tmp = fileKleeState[i];
         }
         string fname = fileKlee + "/" + tmp + ".png";
-        cout << i << ": " << fname << '\n';
+        //cout << i << ": " << fname << '\n';
         if(!gTKlee[i].loadFromFile(fname, gRenderer)){
             cout << "Failed to load character's " << fileKleeState[i] << " state\n"; success = false;
         }
@@ -631,10 +693,8 @@ bool loadMedia(){
         cout << "Failed to render ghost's healthbar\n";
         success = false;
     }
+    //cout << 5 << '\n';
     if(!gTEnemyHb.loadFromFile("image/characters/Healthbar/enemybar.png", gRenderer)){
-        success = false;
-    }
-     if(!gTHeart.loadFromFile("image/characters/Healthbar/Healthbar DARK.png", gRenderer)){
         success = false;
     }
     if(success){
@@ -644,9 +704,13 @@ bool loadMedia(){
         gKleeExpbClips[1] = {18, 52, 262, 30};
         gEnemyHbClips[0] = {40, 72, 66, 7};
         gEnemyHbClips[1] = {40, 100, 66, 7};
-        gPlayerHeart = {71, 496, 43, 36};
     }
-
+    if(!gTUlt.loadFromFile("image/characters/Wanderer Magican/Charge_1_cd.png", gRenderer)){
+        success = false;
+    }
+    if(!gTUltCD.loadFromFile("image/characters/Wanderer Magican/no_s.png", gRenderer)){
+        success = false;
+    }
     for(int i = 0; i < 6; i++){
         string tmp;
         if(i == 2 || i == 5){
@@ -658,7 +722,8 @@ bool loadMedia(){
         else{
             tmp = fileArrow[i - 3] + "_f";
         }
-        string fname = fileKlee + "/" + tmp + ".png";
+        //cout << "image/characters/Wanderer Magican";// << '/' << tmp << ".png" << '\n';
+        string fname = "image/characters/Wanderer Magican/" + tmp + ".png";
         //cout << i << ": " << fname << '\t';
         if(!gTArrow[i].loadFromFile(fname, gRenderer)){
             cout << "Failed to load arrow!\n"; success = false;
@@ -698,7 +763,7 @@ bool loadMedia(){
                 else tmp = fileGhost1[j - 6] + "_f";
             }
             string fname = "C:/Users/HP/Documents/code/ltnc/gamebtl/image/characters/" + fileGhost[i] + "/" + tmp + ".png";
-            cout << i << ' ' << j << ": " << fname << '\n';
+            //cout << i << ' ' << j << ": " << fname << '\n';
             if(!gTEnemy[i][j].loadFromFile(fname, gRenderer)){
                 cout << "Failed to load " << fileGhost[i] << "'s " << tmp << " state\n"; success = false;
             }
@@ -933,7 +998,16 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
     }
     file.close();
     int tileId = 0;int li = -1; int lj = -1;
-    ground.pb(make_pair(make_pair(0, 9 * 32), 18 * 32));
+    //ground.pb(make_pair(make_pair(0, 9 * 32), 18 * 32));
+    int lev;
+    for(int i =0; i < 2; i++){
+        if(levels[i] == mapName){
+            lev = i; break;
+        }
+    }
+    if(lv == "1-1"){
+        ground.pb(mp(mp(0, 9 * TILE_WIDTH), 18 * TILE_HEIGHT));
+    }
     for(int i = 0; i < (int)map_content.size(); i++){
         for(int j = 0; j < (int)map_content[i].size(); j++){
             stringId = map_content[i][j];
@@ -951,42 +1025,74 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                     coor.pb(make_pair(make_pair(lj, li), make_pair(j, i)));
                     li = -1; lj = -1;
                 }
-                if(intId == 1){
-                    li = i; lj = j;
-                }
-                if(intId == 3){
-                    ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
-                    li = -1; lj = -1;
-                }
                 if(intId == 13){
                     li = i; lj = j;
                 }
                 if(intId == 15){
                     ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
-                    if((int)upDown.size() < 3){
-                        movingGround* tmp = NULL;
-                        tmp = new movingGround(lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, 128, 576, "ud");
-                        tmp->setDeltaVel((int)upDown.size() * 2);
-                        upDown.pb(tmp);
-                        mvGroundId.pb((int)ground.size() - 1);
+                    if(lv == "1-1"){
+                        if((int)upDown.size() < 4){
+                            movingGround* tmp = NULL;
+                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, 128, 576, "ud");
+                            tmp->setDeltaVel((int)upDown.size() * 2);
+                            upDown.pb(tmp);
+                            udId.pb((int)ground.size() - 1);
+                        }
                     }
+                    else{
+                        cout << ground.size() - 1 << ' ' <<  j << '\n';
+                        if(j != 130 && j != 181){
+                            movingGround* tmp = NULL;
+                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, 160, 15 * 32, "ud");
+                            tmp->setDeltaVel(((int)upDown.size() * 2) % 3);
+                            upDown.pb(tmp);
+                            udId.pb((int)ground.size() - 1);
+                        }
+                        else if(j == 130){
+                            movingGround* tmp = NULL;
+                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, 120 * TILE_WIDTH, 131 * TILE_WIDTH, i * TILE_HEIGHT, i * TILE_HEIGHT, "lr");
+                            tmp->setDeltaVel(1);
+                            leftRight.pb(tmp);
+                            lrId.pb((int)ground.size() - 1);
+                        }
+                        else{
+                            movingGround* tmp = NULL;
+                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, 177 * TILE_WIDTH, 183 * TILE_WIDTH, i * TILE_HEIGHT, i * TILE_HEIGHT, "lr");
+                            tmp->setDeltaVel(0);
+                            leftRight.pb(tmp);
+                            lrId.pb((int)ground.size() - 1);
+                        }
+                        li = -1; lj = -1;
+                    }
+                }
+                if(intId == 3){
+                    ground.pb(mp(mp(0, j * TILE_WIDTH), i * TILE_HEIGHT));
+                }
+                if(intId == 1){
+                    ground.pb(mp(mp(j * TILE_WIDTH, LEVEL_WIDTH[lev] - TILE_WIDTH), i * TILE_HEIGHT));
+                    if(lv == "1-2"){
+                        for(int ii = 0; ii < TOTAL_ENEMIES; ii++){
+                            Enemy* e = new Enemy(j * TILE_WIDTH, i * TILE_HEIGHT, LEVEL_WIDTH[lev] - TILE_WIDTH, ii, gEnemySpriteClips[ii][5][0]);
+                            ghost[ii].pb(e);
+                        }
+                    }
+
                 }
                 tiles[tileId] = new Tile(j * TILE_WIDTH, i * TILE_HEIGHT, intId); tileId++;
             }
-            //cout << tileId << ' ' << intId << '\n';
         }
-        //cout << '\n';
         if(success == false){
             break;
         }
     }
-    ground.pb(make_pair(make_pair(102 * 32, 111 * 32), 18 * 32));
     tot_tiles = tileId;
+
     srand(time(NULL));
     int noE = 2;
     if(lv != "1-1"){
         noE = 3;
     }
+    cout << "Number of enemies: " << noE * 2 << '\n';
     for(int i = 0; i < TOTAL_ENEMIES; i++){
         for(int j = 0; j < noE; j++){
             int id = rand() % (int)coor.size();
@@ -994,16 +1100,8 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
             Enemy* e = new Enemy(lx * TILE_WIDTH, y * TILE_HEIGHT, rx * TILE_WIDTH, i, gEnemySpriteClips[i][5][0]);
             ghost[i].pb(e);
         }
-        //cout << "GSize - start: " << ghost[i].size() << '\n';
     }
-    /*
-    for(int i = 0; i < TOTAL_ENEMIES; i++){
-        for(int j = 0; j < (int)ghost[i].size(); i++){
-            cout << ghost[i][j]->getEnemyBox().x << ' ' << ghost[i][j]->getEnemyBox().y << '\n';
-        }
-    }*/
-    //cout << "----------------------------------------------------------------------\n";
-    //cout << "Ground:\n";
+    coor.clear();
     return success;
 }
 
@@ -1019,7 +1117,7 @@ void clear(Tile* tiles[]){
 	}
 	for(int i = 0; i < TOTAL_ENEMIES; i++){
         int j = 0;
-        while(j < ghost[i].size()){
+        while(j < (int)ghost[i].size()){
             Enemy* e = ghost[i].at(j);
             if(e != NULL){
                 ghost[i].erase(ghost[i].begin() + j);
@@ -1040,8 +1138,20 @@ void clear(Tile* tiles[]){
         }
         i++;
 	}
-	cout << (int)upDown.size() << '\n';
+	i = 0;
+	while(i < (int)leftRight.size()){
+        movingGround* mv = leftRight.at(i);
+        if(mv != NULL){
+            leftRight.erase(leftRight.begin() + i);
+            delete mv; mv = NULL;
+            i--;
+        }
+        i++;
+	}
+	//cout << (int)upDown.size() << ' ' << (int)leftRight.size();
 	ground.clear();
+	udId.clear(); lrId.clear();
+	tot_tiles = 0;
 }
 
 void close(Tile* tiles[]){
@@ -1077,7 +1187,7 @@ void close(Tile* tiles[]){
     gTExpText.free();
     gTEnemyHb.free();
     gTEnemyHbBg.free();
-    gTHeart.free();
+    gTLevelDialog.free();
 
     TTF_CloseFont(gFont);
     TTF_CloseFont(gTitleFont);
@@ -1104,7 +1214,7 @@ void close(Tile* tiles[]){
     Mix_FreeChunk(fall);
     fall = NULL;
     Mix_FreeChunk(die);
-    die = fall;
+    die = NULL;
     Mix_FreeChunk(player_hurt);
     player_hurt = NULL;
     Mix_FreeChunk(ghost_die[0]);
@@ -1115,32 +1225,45 @@ void close(Tile* tiles[]){
     ghost_att = NULL;
 
     clear(tiles);
-    for(int i = 0; i < (int)menuStart.size(); i++){
-        Buttons* b = menuStart.at(i);
-        if(b != NULL){
+    int i = 0;
+	while(i < (int)menuStart.size()){
+        Buttons* bt = menuStart.at(i);
+        if(bt != NULL){
             menuStart.erase(menuStart.begin() + i);
-            delete b; b = NULL;
+            delete bt; bt = NULL;
+            i--;
         }
-    }
-    for(int i = 0; i < (int)gameOverButtons.size(); i++){
-        Buttons* b = gameOverButtons.at(i);
-        if(b != NULL){
+        i++;
+	}
+	i = 0;
+    while(i < (int)gameOverButtons.size()){
+        Buttons* bt = gameOverButtons.at(i);
+        if(bt != NULL){
             gameOverButtons.erase(gameOverButtons.begin() + i);
-            delete b; b = NULL;
+            delete bt; bt = NULL;
+            i--;
         }
-    }
-    for(int i = 0; i < (int)wonButtons.size(); i++){
-        Buttons* b = wonButtons.at(i);
-        if(b != NULL){
+        i++;
+	}
+	i = 0;
+    while(i < (int)wonButtons.size()){
+        Buttons* bt = wonButtons.at(i);
+        if(bt != NULL){
             wonButtons.erase(wonButtons.begin() + i);
-            delete b; b = NULL;
+            delete bt; bt = NULL;
+            i--;
         }
-    }
-    for(int i = 0; i < (int)failedButtons.size(); i++){
-        Buttons* b = failedButtons.at(i);
-        if(b != NULL){
+        i++;
+	}
+	i = 0;
+    while(i < (int)failedButtons.size()){
+        Buttons* bt = failedButtons.at(i);
+        if(bt != NULL){
             failedButtons.erase(failedButtons.begin() + i);
-            delete b; b = NULL;
+            delete bt; bt = NULL;
+            i--;
         }
-    }
+        i++;
+	}
+
 }

@@ -4,7 +4,7 @@
 
 1675958079 c:\users\hp\documents\code\ltnc\gamebtl\include\character.h
 
-1682499121 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
+1683284406 source:c:\users\hp\documents\code\ltnc\gamebtl\main.cpp
 	"Utils.h"
 	"LTexture.h"
 	"Klee.h"
@@ -29,10 +29,10 @@
 	"Button.h"
 	"LTexture.h"
 
-1682498350 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
+1683279341 source:c:\users\hp\documents\code\ltnc\gamebtl\klee.cpp
 	"Klee.h"
 
-1682491955 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
+1683279341 c:\users\hp\documents\code\ltnc\gamebtl\klee.h
 	"Utils.h"
 	"LTexture.h"
 	"Tile.h"
@@ -45,7 +45,7 @@
 
 1679246304 c:\users\hp\documents\code\ltnc\gamebtl\map.h
 
-1682766755 c:\users\hp\documents\code\ltnc\gamebtl\utils.h
+1682782112 c:\users\hp\documents\code\ltnc\gamebtl\utils.h
 	<iostream>
 	<string>
 	<stdlib.h>
@@ -61,10 +61,10 @@
 	<SDL_mixer.h>
 	<cmath>
 
-1682754348 source:c:\users\hp\documents\code\ltnc\gamebtl\enemy.cpp
+1682926946 source:c:\users\hp\documents\code\ltnc\gamebtl\enemy.cpp
 	"Enemy.h"
 
-1682494260 c:\users\hp\documents\code\ltnc\gamebtl\enemy.h
+1682926508 c:\users\hp\documents\code\ltnc\gamebtl\enemy.h
 	"Utils.h"
 	"LTexture.h"
 	"Tile.h"
@@ -98,10 +98,10 @@
 	"Utils.h"
 	"LTexture.h"
 
-1682766755 source:c:\users\hp\documents\code\ltnc\gamebtl\function.cpp
+1683105314 source:c:\users\hp\documents\code\ltnc\gamebtl\function.cpp
 	"Function.h"
 
-1682488999 c:\users\hp\documents\code\ltnc\gamebtl\function.h
+1683085915 c:\users\hp\documents\code\ltnc\gamebtl\function.h
 	"Utils.h"
 	"LTexture.h"
 	"Buttons.h"
@@ -124,12 +124,12 @@
 
 1681741343 c:\users\hp\documents\code\ltnc\gamebtl\fireball.h
 
-1682447618 c:\users\hp\documents\code\ltnc\gamebtl\movingground.h
+1682925563 c:\users\hp\documents\code\ltnc\gamebtl\movingground.h
 	"Utils.h"
 	"Tile.h"
 	"Klee.h"
 
-1682497587 source:c:\users\hp\documents\code\ltnc\gamebtl\movingground.cpp
+1683104142 source:c:\users\hp\documents\code\ltnc\gamebtl\movingground.cpp
 	"movingGround.h"
 
 1682262055 c:\users\hp\documents\code\ltnc\gamebtl\arrow.h

@@ -24,7 +24,7 @@ int showMenu(Mix_Music* menuMusic, LTexture& background, LTexture (&gTButtonsSpr
         while(SDL_PollEvent(&ev) != 0){
             if(ev.type == SDL_QUIT){
                 //Mix_HaltMusic();
-                return 1;
+                return -1;
             }
             int x, y; SDL_GetMouseState(&x, &y);
             switch(ev.type){
@@ -52,6 +52,9 @@ int showMenu(Mix_Music* menuMusic, LTexture& background, LTexture (&gTButtonsSpr
                     if(menuButtons[i]->isInside(x, y)){
                         cout << i << '\n';
                         Mix_HaltMusic();
+                        if(i == 1){
+                            return -1;
+                        }
                         return i;
                     }
                 }
@@ -63,7 +66,7 @@ int showMenu(Mix_Music* menuMusic, LTexture& background, LTexture (&gTButtonsSpr
         }
         SDL_RenderPresent(gRenderer);
     }
-    return 1;
+    return -1;
 }
 
 int showClearLevel(Mix_Music* wonMusic, string won_s, LTexture& background, LTexture& gTDialog, LTexture& gTWonText, TTF_Font* gWonFont,  LTexture (&gTButtonsSpriteSheet)[2], SDL_Renderer* gRenderer, vector<Buttons*>& wonButtons){
@@ -93,7 +96,7 @@ int showClearLevel(Mix_Music* wonMusic, string won_s, LTexture& background, LTex
         while(SDL_PollEvent(&ev) != 0){
             if(ev.type == SDL_QUIT){
                 Mix_HaltMusic();
-                return 1;
+                return -1;
             }
             int x, y; SDL_GetMouseState(&x, &y);
             switch(ev.type){
@@ -131,7 +134,7 @@ int showClearLevel(Mix_Music* wonMusic, string won_s, LTexture& background, LTex
         }
         SDL_RenderPresent(gRenderer);
     }
-    return 1;
+    return -1;
 }
 
 int showGameOver(Mix_Music* gameOverMusic, string gameOverS, LTexture& background, LTexture& gTDialog, LTexture& gTGameOverText, LTexture (&gTButtonsSpriteSheet)[2], SDL_Renderer* gRenderer, TTF_Font* gGameOverFont, vector<Buttons*>& gameOverButtons){

@@ -1,6 +1,6 @@
 #include "movingGround.h"
 
-movingGround::movingGround(int Lx, int Rx, int y, int lx, int rx, int ly, int ry, string dire)
+movingGround::movingGround(int curLevel, int Lx, int Rx, int y, int lx, int rx, int ly, int ry, string dire)
 {
     //ctor
     mVelX = 0; mVelY = 0;
@@ -10,7 +10,7 @@ movingGround::movingGround(int Lx, int Rx, int y, int lx, int rx, int ly, int ry
     mBox.x = Lx; mBox.w = Rx - Lx;
     mBox.y = y; mBox.h = TILE_HEIGHT;
     dir = 1;
-    LT = Lx / TILE_WIDTH + (LEVEL_WIDTH / TILE_WIDTH) * (y / TILE_HEIGHT); RT = Rx / TILE_WIDTH - 1 + (LEVEL_WIDTH / TILE_WIDTH) * (y / TILE_HEIGHT);
+    LT = Lx / TILE_WIDTH + (LEVEL_WIDTH[curLevel] / TILE_WIDTH) * (y / TILE_HEIGHT); RT = Rx / TILE_WIDTH - 1 + (LEVEL_WIDTH[curLevel] / TILE_WIDTH) * (y / TILE_HEIGHT);
 }
 
 bool movingGround::onmvGround(Klee* klee){
@@ -23,32 +23,39 @@ bool movingGround::onmvGround(Klee* klee){
 
 void movingGround::move(Tile* tiles[], Klee* klee){
     if(d == "lr"){
-        mVelX = dir * GROUND_VEL + del;
-        int x = tiles[LT]->getBox().x; int y = tiles[LT]->getBox().y;
+        //cout << LT % (7168 / 32) << ' ' << RT % (7168 / 32) << '\n';
+        mVelX = dir * (GROUND_VEL + del);
+        int x = tiles[LT]->getBox().x + mVelX; int y = tiles[LT]->getBox().y;
         int x_ = x;
         if(x < lim_lx){
-            tiles[LT]->updateBox(lim_lx, y); dir = -dir;
+            //tiles[LT]->updateBox(lim_lx, y);
+            dir = -dir;
             x_ = lim_lx;
         }
-        x = tiles[RT]->getBox().x; y = tiles[RT]->getBox().y;
-        if(x + TILE_WIDTH > lim_rx){
+        x = tiles[RT]->getBox().x + mVelX; y = tiles[RT]->getBox().y;
+        if(x > lim_rx - TILE_WIDTH){
             tiles[RT]->updateBox(lim_rx - TILE_WIDTH, y);
             dir = -dir;
             x_ = lim_rx - TILE_WIDTH;
         }
         if(x_ != lim_rx - TILE_WIDTH){
-            x_ = tiles[LT]->getBox().x;
-            for(int i = LT + 1; i <= RT; i++){
-                tiles[i]->updateBox(x_ + TILE_WIDTH, y);
+            x_ = max(lim_lx, tiles[LT]->getBox().x + mVelX);
+            for(int i = LT; i <= RT; i++){
+                tiles[i]->updateBox(x_, y); //cout << x_ << ' ';
                 x_ += TILE_WIDTH;
             }
+            //cout << '\n';
         }
         else{
+            //cout << x_ << ' ';
             for(int i = RT - 1; i >= LT; i--){
                 tiles[i]->updateBox(x_ - TILE_WIDTH, y);
+                //cout << x_ - TILE_WIDTH << ' ';
                 x_ -= TILE_WIDTH;
             }
+            //cout << '\n';
         }
+        mBox.x = tiles[LT]->getBox().x;
         //continue to update (x, y) of each tile in this ground
     }
     else{
@@ -57,20 +64,18 @@ void movingGround::move(Tile* tiles[], Klee* klee){
         if(onmvGround(klee)){
             ck = 1;
         }
-        int tmpY = mBox.y;
-        for(int i = LT - 1; i <= RT; i++){
-            int x = tiles[i]->getBox().x;
-            int y = tiles[i]->getBox().y + mVelY;
-            //cout << "Lim tile: "  << lim_ly << ' ' << lim_ry << '\n';
-            if(y < lim_ly){
-                y = lim_ly; dir = -dir; mVelY = 0;
-            }
-            if(y + TILE_HEIGHT > lim_ry){
-                y = lim_ry - TILE_HEIGHT; dir = -dir; mVelY = 0;
-            }
-            tiles[i]->updateBox(x, y);
-            mBox.y = y;
+        int y = tiles[LT]->getBox().y + mVelY;
+        if(y < lim_ly){
+            y = lim_ly; dir = -dir;
         }
+        if(y + TILE_HEIGHT > lim_ry){
+            y = lim_ry - TILE_HEIGHT; dir = -dir;
+        }
+        for(int i = LT; i <= RT; i++){
+            int x = tiles[i]->getBox().x;
+            tiles[i]->updateBox(x, y);
+        }
+        mBox.y = tiles[LT]->getBox().y;
         //cout << mBox.x << ' ' << mBox.y << '\n';
         if(ck){
             int new_y = mBox.y - klee->getKleeBox().h;

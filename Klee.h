@@ -19,9 +19,9 @@ class Klee
         void handleKleeEvent(SDL_Event &e, SDL_Rect (&gKleeSpriteClips)[18][16], vector<pair<pair<int, int>, int>>& ground, pair<int, int> (&kFeet)[9][16]);
         bool touchObjects(Tile* tiles[]);
         bool onGround(vector<pair<pair<int, int>, int>>& ground);
-        void move(Tile* tiles[],vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]);
+        void move(int curLevel, Tile* tiles[],vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]);
         void render(LTexture& gTKleeSpriteSheet, LTexture& gTKleeHb, LTexture& gTKleeHbBackground, SDL_Rect (&gKleeHbClips)[2], LTexture& gTKleeExp, LTexture& gTKleeExpBg, SDL_Rect (&gKleeExpbClips)[2], SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
-        void setCamera(SDL_Rect& camera);
+        void setCamera(int curLevel, SDL_Rect& camera);
         void updateKleeHealth(Mix_Chunk* pState, int d, SDL_Rect (&gKleeSpriteClips)[18][16]);
         void updateExp(Mix_Chunk* lv_up, int val);
         int getKleeVelX();
@@ -49,12 +49,13 @@ class Klee
         SDL_Rect mKleeBox;
         int mKleeHealth;
         int mKleeMxHealth;
-        bool mLeft, mRight, mJump, mUp, mDown, mRun;
+        bool mLeft, mRight, mJump, mUp, mDown;
         int mmvLx, mmvRx, mmvy;
         int fLeft, fRight;
         Healthbar* klee_hbar;
         int exp;
         int lim_cd;
+        int level;
         Healthbar* klee_exp_bar; //well actually this is an exp bar
 };
 
