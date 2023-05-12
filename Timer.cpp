@@ -23,7 +23,7 @@ void Timer::stop(){
 }
 
 void Timer::pause(){
-    if(started == false && paused == false){
+    if(started == true && paused == false){
         paused = true;
         tPause = SDL_GetTicks() - tStart;
     }

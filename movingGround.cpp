@@ -24,8 +24,14 @@ bool movingGround::onmvGround(Klee* klee){
 void movingGround::move(Tile* tiles[], Klee* klee){
     if(d == "lr"){
         //cout << LT % (7168 / 32) << ' ' << RT % (7168 / 32) << '\n';
+        bool ck = 0;
+        if(onmvGround(klee)){
+            ck = 1;
+        }
         mVelX = dir * (GROUND_VEL + del);
-        int x = tiles[LT]->getBox().x + mVelX; int y = tiles[LT]->getBox().y;
+        int diff_x = klee->getKleeBox().x - tiles[LT]->getBox().x;
+        int x = tiles[LT]->getBox().x + mVelX;
+        int y = tiles[LT]->getBox().y;
         int x_ = x;
         if(x < lim_lx){
             //tiles[LT]->updateBox(lim_lx, y);
@@ -56,7 +62,11 @@ void movingGround::move(Tile* tiles[], Klee* klee){
             //cout << '\n';
         }
         mBox.x = tiles[LT]->getBox().x;
-        //continue to update (x, y) of each tile in this ground
+        if(ck){
+            int new_x = mBox.x + diff_x;
+            int new_y = mBox.y - klee->getKleeBox().h;
+            klee->updatemvGround(new_x, new_y);
+        }
     }
     else{
         bool ck = 0;
@@ -78,8 +88,8 @@ void movingGround::move(Tile* tiles[], Klee* klee){
         mBox.y = tiles[LT]->getBox().y;
         //cout << mBox.x << ' ' << mBox.y << '\n';
         if(ck){
-            int new_y = mBox.y - klee->getKleeBox().h;
-            klee->updatemvGround(new_y);
+            int new_y = mBox.y - klee->getKleeBox().h; int new_x = klee->getKleeBox().x;
+            klee->updatemvGround(new_x, new_y);
         }
        // mBox.x = LT * TILE_WIDTH;
     }

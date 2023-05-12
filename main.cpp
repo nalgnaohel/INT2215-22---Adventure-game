@@ -6,6 +6,7 @@
 #include "Function.h"
 #include "Timer.h"
 #include "movingGround.h"
+#include "Letter.h"
 
 using namespace std;
 
@@ -14,8 +15,13 @@ const string WINDOW_TITLE = "Game ver 1.0";
 bool initSDL();
 bool loadMedia();
 void close(Tile* tiles[]);
-bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMIES]);
+bool setTiles(Tile* tiles[], string mapName);
+void setGhosts(string lv);
 void clear(Tile* tiles[]);
+void setupData();
+void updateData();
+void showData(); // debug only
+int curLevelId = 0;
 
 SDL_Window* gWindow = NULL;
 LTexture gTBackground;
@@ -29,7 +35,6 @@ LTexture gTEnemy[TOTAL_ENEMIES][12];
 LTexture gTArrow[6];
 LTexture gTText;
 LTexture gTMenuButtonsSpriteSheet[2];
-LTexture gTNPC1;
 LTexture gTEndLevelSign;
 LTexture gTEndLevelDialog;
 LTexture gTWinText;
@@ -38,8 +43,6 @@ LTexture gTFailText;
 LTexture gTExpText;
 LTexture gTPauseText[2];
 LTexture gTTime;
-Klee* klee = NULL;
-SDL_Renderer* gRenderer = NULL;
 LTexture gTypeTiles[TOTAL_TILE_TYPES];
 LTexture gTEnemyHb;
 LTexture gTEnemyHbBg;
@@ -48,11 +51,18 @@ LTexture gTLevelDialog;
 LTexture gTUlt;
 LTexture gTUltCD;
 LTexture gTUltTime;
+LTexture gTLetter;
+LTexture gTPreIns;
+LTexture gTSmallDialog;
+LTexture gTTitle;
+Klee* klee = NULL;
+SDL_Renderer* gRenderer = NULL;
 
 TTF_Font* gFont = NULL;
 TTF_Font* gTitleFont = NULL;
 TTF_Font* gPauseFont1 = NULL;
 TTF_Font* gPauseFont2 = NULL;
+TTF_Font* gHalloFont = NULL;
 
 Mix_Music* menuMusic = NULL;
 Mix_Music* playMusic_normal = NULL;
@@ -68,7 +78,13 @@ Mix_Chunk* player_hurt = NULL;
 Mix_Chunk* ghost_die[2] = {NULL, NULL};
 Mix_Chunk* ghost_hurt[2] = {NULL, NULL};
 Mix_Chunk* ghost_att = NULL;
+Mix_Chunk* sound_e = NULL;
+Mix_Chunk* sound_q = NULL;
+Mix_Chunk* sound_s = NULL;
+Mix_Chunk* button = NULL;
 
+Letter* letter;
+vector<string> clearedLevel;
 vector<Buttons*> menuStart;
 string lv;
 vector<Enemy*> ghost[TOTAL_ENEMIES];
@@ -79,6 +95,8 @@ vector<movingGround*> leftRight;
 vector<Buttons*> gameOverButtons;
 vector<Buttons*> failedButtons;
 vector<Buttons*> wonButtons;
+vector<pair<pair<int, int>, pair<int, int>>> coor;
+map<pair<pair<int, int>, int>, bool> is_mv;
 Tile* tiles[MAX_TOTAL_TILES];
 int TOTAL_TILES;
 SDL_Rect gKleeSpriteClips[18][16];
@@ -88,10 +106,12 @@ SDL_Rect gKleeExpbClips[2];
 SDL_Rect gEnemyHbClips[2];
 SDL_Rect gArrowSpriteClips[6][9];
 SDL_Rect gPlayerHeart;
+SDL_Rect gLetter;
 int gArrowSpriteClipsSize[6];
 SDL_Rect gEnemySpriteClips[2][12][7];
 int gEnemySpriteClipsSize[2][12];
 int tot_tiles = 0;
+int st_level = 0;
 pair<int, int> kFeet[9][16]; //x + fi, x + w - se
 
 string fileKlee = "image/characters/Wanderer Magican";
@@ -126,12 +146,18 @@ int main(int argc, char* argv[]){
             SDL_Color btmpColor = {121, 48, 48};
 
             Buttons* btmp = NULL; btmp = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
-            btmp->setPosition(SCREEN_WIDTH / 2 - MENU_BUTTON_WIDTH / 2, 350);
-            btmp->setButtonName("Play!", btmpColor, gFont);
+            btmp->setPosition(SCREEN_WIDTH / 2 - MENU_BUTTON_WIDTH / 2, 250);
+            btmp->setButtonName("New game...", btmpColor, gFont);
             Buttons* btmp1 = NULL; btmp1 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
-            btmp1->setPosition(btmp->getButtonBox().x, btmp->getButtonBox().y + MENU_BUTTON_HEIGHT + 50);
-            btmp1->setButtonName("Bye...", btmpColor, gFont);
-            menuStart.pb(btmp); menuStart.pb(btmp1);
+            btmp1->setPosition(btmp->getButtonBox().x, btmp->getButtonBox().y + MENU_BUTTON_HEIGHT + 25);
+            btmp1->setButtonName("Load", btmpColor, gFont);
+            Buttons* btmp2 = NULL; btmp2 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
+            btmp2->setPosition(btmp1->getButtonBox().x, btmp1->getButtonBox().y + MENU_BUTTON_HEIGHT + 25);
+            btmp2->setButtonName("Choose Level", btmpColor, gFont);
+            Buttons* btmp3 = NULL; btmp3 = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
+            btmp3->setPosition(btmp2->getButtonBox().x, btmp2->getButtonBox().y + MENU_BUTTON_HEIGHT + 25);
+            btmp3->setButtonName("Bye...", btmpColor, gFont);
+            menuStart.pb(btmp); menuStart.pb(btmp1); menuStart.pb(btmp2); menuStart.pb(btmp3);
 
             Buttons* failButton = NULL;
             failButton = new Buttons(MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT);
@@ -162,55 +188,95 @@ int main(int argc, char* argv[]){
             goButton2->setButtonName("Leave...", btmpColor, gFont);
             gameOverButtons.pb(goButton2);
             //show menu
-            int life = 3;
-            int gameState = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
+            bool new_p = 1; bool new_g = 1;
+            string fname = "data.txt";
+            fstream file(fname);
+            vector<string> row;
+            vector<vector<string>> content;
+            string line, stringId;
+            if(file.is_open()){
+                while(getline(file, line)){
+                    row.clear();
+                    stringstream str(line);
+                    while(getline(str, stringId, ' ')){
+                        row.pb(stringId);
+                    }
+                    content.pb(row);
+                }
+                file.close();
+            }
+            if((int)content.size() > 1){
+                for(int i = 0; i < stoi(content[1][0]); i++){
+                    clearedLevel.pb(levels[i]);
+                }
+            }
+            int gameState = showMenu(button, gTTitle, gHalloFont, clearedLevel, gFont, gTSmallDialog, gTPreIns,menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
+
             if(gameState == -1){
                 play = 0; isRunning = 0;
             }
-            else{
-                life = 3;
+            else if(gameState == 1){
+                new_p = 0; new_g = 0; curLevelId = stoi(content[1][1]); st_level = stoi(content[1][2]);
             }
-            int curLevelId = 0;
+            else{
+                if(gameState == 0){
+                    curLevelId = 0; clearedLevel.clear();
+                }
+                else{
+                    curLevelId = gameState - 2;
+                }
+            }
             //run game
             SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderClear(gRenderer);
 
             bool already = 0;
             while(play){
-                SDL_Event event; //int prev_time = 0;
+                SDL_Event event;
                 bool gameOver = 0; bool won = 0;
                 SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
                 bool died = 0;
                 Timer fps_timer;
                 if(!already){
-                    lv = levels[curLevelId];
-                    if(!setTiles(tiles, lv, ghost)){
+                    lv = levels[curLevelId]; //cout << lv << '\n';
+                    if(!setTiles(tiles, lv)){
                         play = 0; isRunning = 0;
                         cout << "Unable to load map!\n";
                     }
                     already = 1;
                 }
                 else{
-                    //cout << "Current level: " << lv << ' ' << "Life: " << life << '\n';
-                    klee = new Klee(gKleeSpriteClips[3][0]);
-                    //cout << klee->getKleeHealth();
-                    klee->life = life; //cout << life << ' ';
+                    klee = new Klee(gKleeSpriteClips[3][0]); //cout << "Fine\n";
+                    if(!new_p){
+                        klee->setState();
+                        //showData();
+                    }
+                    else{
+                        klee->updateState(); updateData(); //showData();
+                    }
+                    if(klee->ins == 0){
+                        int xl = klee->getKleeBox().x + klee->getKleeBox().w + 50;
+                        letter = new Letter(xl, gLetter);
+                    }
+                    if(!new_g){
+                        //cout << coor.size() << ' ' << ground.size() << '\n';
+                        setupData();// showData();
+                        /*for(int i = 0; i < TOTAL_ENEMIES; i++){
+                            for(int j = 0; j < (int)ghost[i].size(); j++){
+                                cout << ghost[i][j]->getEnemyLeftX() << ' ' << ghost[i][j]->getEnemyRightX() << '\n';
+                            }
+                            cout << '\n';
+                        }*/
+                    }
+                    else{
+                        //cout << coor.size() << ' ' << ground.size() << '\n';
+                        klee->updateState(); setGhosts(lv); updateData();
+                        //showData();
+                    }
                     klee->TOTAL_TILES = tot_tiles;
                     already = 1;
-                    if(lv != "1-1"){
-                        cout << upDown.size() << '\n';
-                        for(int i = 0; i < (int)upDown.size(); i++){
-                            cout << udId[i] << ":    " <<  ground[udId[i]].fi.fi << ' ' << ground[udId[i]].fi.se << ' ' << ground[udId[i]].se << '\n';
-                        }
-                        cout << leftRight.size() << '\n';
-                        for(int i = 0; i < (int)leftRight.size(); i++){
-                            cout << lrId[i] << ":    " << ground[lrId[i]].fi.fi << ' ' << ground[lrId[i]].fi.se << ' ' << ground[lrId[i]].se << '\n';
-                        }
-                        cout << '\n';
-                    }
-                    Mix_PlayMusic(playMusic_normal, -1); bool pause = 0;
+                    Mix_PlayMusic(playMusic_fight, -1); bool pause = 0; int pre_ins = -1;
                     while(isRunning){
-                        //int startTime = SDL_GetTicks();
                         if(!fps_timer.isStarted()){
                             fps_timer.start();
                         }
@@ -227,26 +293,36 @@ int main(int argc, char* argv[]){
                         }
                         while(SDL_PollEvent(&event)){
                             if(event.type == SDL_QUIT){
-                                isRunning = 0; play = 0;
+                                isRunning = 0; play = 0; break;
                             }
                             if(event.type == SDL_KEYDOWN && event.key.repeat == 0){
                                 if(event.key.keysym.sym == SDLK_x){
                                     if(!pause){
                                         Mix_PlayChannel(-1, page, 0);
+                                        if(pre_ins == -1){
+                                            pre_ins = klee->getKleeBox().x;
+                                        }
                                         int gstate = showInstruction(page, gTBackground, gTEndLevelDialog, gTInstr, gRenderer);
                                         if(gstate == 1){
                                             isRunning = 0;
                                         }
+                                        klee->update_ins(pre_ins);
+                                        pre_ins = -1;
                                     }
                                 }
                                 if(event.key.keysym.sym == SDLK_p){
                                     pause = !pause;
                                     if(pause){
-                                        fps_timer.stop();
                                         fps_timer.pause();
+                                        if(Mix_PausedMusic() == 0){
+                                            Mix_PauseMusic();
+                                        }
                                     }
                                     else{
                                         fps_timer.unpause();
+                                        if(Mix_PausedMusic() == 1){
+                                            Mix_ResumeMusic();
+                                        }
                                     }
 
                                 }
@@ -255,6 +331,7 @@ int main(int argc, char* argv[]){
                                 klee->handleKleeEvent(event, gKleeSpriteClips, ground, kFeet);
                             }
                         }
+                        //cout << tot_tiles << '\n';
                         if(pause){
                             SDL_Color pauseColor = {70, 12, 12};
                             if(!gTPauseText[0].loadFromRenderedText("PAUSE!", pauseColor, gRenderer, gPauseFont1)){
@@ -269,39 +346,64 @@ int main(int argc, char* argv[]){
                             else{
                                 gTPauseText[1].render(SCREEN_WIDTH / 2 - gTPauseText[1].getWidth() / 2, SCREEN_HEIGHT / 2 + 15, gRenderer);
                             }
-                            fps_timer.pause();
                         }
                         if(!pause){
-                            //cout << 33 << '\n';
                             for(int i = 0; i < (int)upDown.size(); i++){
+                                is_mv.erase(ground[udId[i]]);
                                 upDown[i]->move(tiles, klee);
                                 ground[udId[i]].fi.fi = upDown[i]->getLx();
                                 ground[udId[i]].fi.se = upDown[i]->getRx();
                                 ground[udId[i]].se = upDown[i]->getBox().y;
+                                is_mv[ground[udId[i]]] = 1;
                                 //cout << udId[i] << ":    " <<  ground[udId[i]].fi.fi << ' ' << ground[udId[i]].fi.se << ' ' << ground[udId[i]].se << '\n';
                             }
                             //cout <<  "----------------------" << '\n';
                             for(int i = 0; i < (int)leftRight.size(); i++){
+                                is_mv.erase(ground[lrId[i]]);
                                 leftRight[i]->move(tiles, klee);
                                 ground[lrId[i]].fi.fi = leftRight[i]->getBox().x;
                                 ground[lrId[i]].fi.se = leftRight[i]->getBox().x + leftRight[i]->getBox().w;
                                 ground[lrId[i]].se = leftRight[i]->getBox().y;
-                                //if(i == 1){
-                                //cout << lrId[i] << ":    " << ground[lrId[i]].fi.fi << ' ' << ground[lrId[i]].fi.se << ' ' << ground[lrId[i]].se << '\n';
-                                //}
+                                is_mv[ground[lrId[i]]] = 1;
                             }
-                            klee->handleArrowList(ghost_die, gRenderer, gTArrow, gArrowSpriteClips, gArrowSpriteClipsSize, camera, ghost, gEnemySpriteClips);
-                            klee->move(curLevelId, tiles, ground, gKleeSpriteClips, kFeet);
+                            if(!klee->ins){
+                                //if(letter != NULL){
+                                //    cout << 2 << '\n';
+                                //}
+                                letter->move();
+                                letter->render(gRenderer, gTLetter, &gLetter);
+                                SDL_Rect kBox = klee->getKleeBox(); SDL_Rect lBox = letter->getBox();
+                                if(checkCollision(kBox, lBox)){
+                                    if(pre_ins == -1){
+                                        pre_ins = kBox.x;
+                                    }
+                                    else{
+                                        Mix_PlayChannel(-1, page, 0);
+                                        int f = showInstruction(page, gTBackground, gTEndLevelDialog, gTInstr, gRenderer);
+                                        if(f == 1){
+                                            isRunning = 0; play = 0; break;
+                                        }
+                                        else{
+                                            klee->ins = 1;
+                                            klee->update_ins(pre_ins); klee->updateState(); updateData();
+                                            pre_ins = -1;
+                                        }
+                                    }
+                                }
+                            }
+                            klee->handleArrowList(sound_q, sound_s, ghost_die, gRenderer, gTArrow, gArrowSpriteClips, gArrowSpriteClipsSize, camera, ghost, gEnemySpriteClips);
+                            klee->move(curLevelId, is_mv, tiles, ground, gKleeSpriteClips, kFeet);
                             klee->setCamera(curLevelId, camera);
                             if(!died){
                                 for(int i = 0; i < TOTAL_ENEMIES; i++){
                                     int j = 0;
                                     while(j < (int)ghost[i].size()){
                                         SDL_Rect kBox = klee->getKleeBox();
-                                        //cout << i << ' ' << j << ":    " ;
-                                        //cout << ghost[i][j]->frame << ' ' << cur << ' ' << status[cur % 6] << '\n';
                                         ghost[i][j]->action(playMusic_fight, stab, ghost_att, kBox, gEnemySpriteClips, gEnemySpriteClipsSize);
                                         klee->updateKleeHealth(player_hurt, ghost[i][j]->getEnemyDamage(), gKleeSpriteClips);
+                                        //if(ghost[i][j]->getEnemyDamage() > 0){
+                                            //cout << "Hurt:   " << klee->getKleeHealth() << '\n';
+                                        //}
                                         //cout << "Klee Health: " << klee->getKleeHealth() << '\n';
                                         if(klee->getKleeHealth() <= 0){
                                             died = 1; klee->spriteId = 1; klee->kleeFrame = 0;
@@ -311,6 +413,7 @@ int main(int argc, char* argv[]){
                                             break;
                                         }
                                         if(klee->spriteId % 9 == 0 && klee->kleeFrame == 4 * KLEE_ID_FRAME[klee->spriteId % 9]){
+                                            Mix_PlayChannel(-1, sound_e, 0);
                                             SDL_Rect dam;
                                             if(klee->spriteId == 0){
                                                 dam = {klee->getKleeBox().x, klee->getKleeBox().y - 36, klee->getKleeBox().w + 36, klee->getKleeBox().h + 72};
@@ -328,9 +431,7 @@ int main(int argc, char* argv[]){
                                         int fr = ghost[i][j]->frame;
                                         if(ghost[i][j]->spriteId % 6 == 1 && fr == gEnemySpriteClipsSize[ghost[i][j]->type][1] * GHOST_ID_FRAME[ghost[i][j]->type][1] - 1){
                                             //delete this ghost
-                                            //cout << "Bye  " << i << ' ' << j << '\n';
                                             klee->updateExp(level_up, ghost[i][j]->getExp_val());
-                                            life = klee->life;
                                             Enemy* e = ghost[i].at(j);
                                             ghost[i].erase(ghost[i].begin() + j);
                                             delete e;
@@ -345,30 +446,30 @@ int main(int argc, char* argv[]){
                                 }
                             }
                             //cout << klee->onGround(ground) << ' ' << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->getKleeHealth() << ' ';
-                            //cout << '\n';
                             if((died && klee->kleeFrame == gKleeSpriteClipsSize[1] * KLEE_ID_FRAME[1] - 1)){
                                 gameOver = true;
-                                life--;
+                                klee->life--;
                             }
                             if(klee->getKleeBox().y > SCREEN_HEIGHT){
                                 Mix_PlayChannel(-1, fall, 0);
-                                gameOver = true; life--;
+                                gameOver = true; klee->life--;
                             }
                         }
                         if(gameOver){
                             isRunning = false;
+                            st_level = st_level + fps_timer.getCurTicks();
                             fps_timer.stop();
-                            fps_timer.pause();
                         }
                         if(klee->getKleeBox().x + klee->getKleeBox().w >= LEVEL_WIDTH[curLevelId]){
                             won = true; isRunning = false;
+                            st_level = st_level + fps_timer.getCurTicks();
                             fps_timer.stop();
-                            fps_timer.pause();
                         }
                             //cout << klee->spriteId << ' ' << klee->kleeFrame << ' ' << klee->onGround(ground) << '\n';
                         SDL_Rect* currentClip;
                         currentClip = &gKleeSpriteClips[klee->spriteId][klee->kleeFrame / KLEE_ID_FRAME[klee->spriteId % 9]];
                         klee->render(gTKlee[klee->spriteId], gTKleeHb, gTKleeHbBackground, gKleeHbClips, gTKleeExp, gTKleeExpBg, gKleeExpbClips, gRenderer, currentClip, camera);
+
                         for(int i = 0; i < TOTAL_ENEMIES; i++){
                             for(int j = 0; j < (int)ghost[i].size(); j++){
                                 int fr = ghost[i][j]->frame; int sp = ghost[i][j]->spriteId;
@@ -376,48 +477,52 @@ int main(int argc, char* argv[]){
                                 ghost[i][j]->render(gTEnemyHb, gTEnemyHbBg, gEnemyHbClips, gTEnemy[i][sp], gRenderer, clip, camera);
                             }
                         }
-                        SDL_Rect signBox = {LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth(), LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT, gTEndLevelSign.getWidth(), gTEndLevelSign.getHeight()};
+
+                        int y_signBox = LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT;
+                        if(curLevelId == 1){
+                            y_signBox -= TILE_HEIGHT;
+                        }
+                        SDL_Rect signBox = {LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth(), y_signBox, gTEndLevelSign.getWidth(), gTEndLevelSign.getHeight()};
                         if(checkCollision(camera, signBox)){
-                            gTEndLevelSign.render(LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth() - camera.x - 10, LEVEL_HEIGHT - gTEndLevelSign.getHeight() - 3 * TILE_HEIGHT - camera.y, gRenderer);
+                            gTEndLevelSign.render(LEVEL_WIDTH[curLevelId] - gTEndLevelSign.getWidth() - camera.x - 10, y_signBox - camera.y, gRenderer);
                         }
                         int now_time = SDL_GetTicks() - st_fr;
                         int elasped = fps_timer.getCurTicks();
-                        elasped /= 1000;
-                        string time_ = "Time: " + to_string(elasped);
+                        int real_time = (elasped + st_level) / 1000;
+                        string time_ = "Time: " + to_string(real_time);
                         SDL_Color titleColor = {255, 255, 255};
-                        if(klee->s_cd){
-                            int scd = klee->s_cd / FRAME_PER_SECOND; string cd = to_string(scd);
-                            if(!gTUltTime.loadFromRenderedText(cd, titleColor, gRenderer, gFont)){
-                                break;
-                            }
-                            else{
-                                gTUltTime.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth(), 10, gRenderer);
-                                gTUlt.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth() - gTUlt.getWidth() - 10, 10, gRenderer);
-                                gTUltCD.render(SCREEN_WIDTH - 30 - gTUltTime.getWidth() - gTUlt.getWidth() - 10, 10, gRenderer);
-                            }
-                        }
                         if(!gTTime.loadFromRenderedText(time_, titleColor, gRenderer, gFont)){
                             cout << "Unable to display time\n"; break;
                         }
                         else{
                             gTTime.render(10, 10, gRenderer);
                         }
-                            string extp_text = "Exp: ";
-                            if(!gTExpText.loadFromRenderedText(extp_text, titleColor, gRenderer, gFont)){
+                        if(klee->s_cd){
+                            int scd = klee->s_cd / FRAME_PER_SECOND; string cd = to_string(scd);
+                            if(!gTUltTime.loadFromRenderedText(cd, titleColor, gRenderer, gFont)){
                                 break;
                             }
                             else{
-                                gTExpText.render(SCREEN_WIDTH / 2, 10, gRenderer);
+                                gTUltTime.render(10, 40 + gTTime.getHeight(), gRenderer);
+                                gTUlt.render(gTUltTime.getWidth() + 40, 40 + gTTime.getHeight(), gRenderer);
+                                gTUltCD.render(gTUltTime.getWidth() + 40, 40 + gTTime.getHeight(), gRenderer);
                             }
-                            string heart_text = "Life: " + to_string(life);
-                            if(!gTExpText.loadFromRenderedText(heart_text, titleColor, gRenderer, gFont)){
-                                break;
-                            }
-                            else{
-                                gTExpText.render(SCREEN_WIDTH / 2, 30 + gTExpText.getHeight(), gRenderer);
-                            }
-                            //int cur_heartx = SCREEN_WIDTH / 2 + gTExpText.getWidth() + 15;
-                            //cout << life << '\n';
+                        }
+                        string extp_text = "Exp: ";
+                        if(!gTExpText.loadFromRenderedText(extp_text, titleColor, gRenderer, gFont)){
+                            break;
+                        }
+                        else{
+                            gTExpText.render(SCREEN_WIDTH / 2, 10, gRenderer);
+                        }
+                        string heart_text = "Life: " + to_string(klee->life);
+                        if(!gTExpText.loadFromRenderedText(heart_text, titleColor, gRenderer, gFont)){
+                            break;
+                        }
+                        else{
+                            gTExpText.render(SCREEN_WIDTH / 2, 30 + gTExpText.getHeight(), gRenderer);
+                        }
+
                         int frameTime = 1000 / FRAME_PER_SECOND;
                         if(now_time < frameTime){
                             int dl = frameTime - now_time;
@@ -425,11 +530,8 @@ int main(int argc, char* argv[]){
                         }
                         SDL_RenderPresent(gRenderer);
 
-                            //update frame
-                            //Klee first
                         if(!pause){
                             klee->updateFrame(gKleeSpriteClips, gKleeSpriteClipsSize, ground, gArrowSpriteClips, camera, kFeet);
-                        //Now the enemies
                             SDL_Rect kBox = klee->getKleeBox();
                             for(int i = 0; i < TOTAL_ENEMIES; i++){
                                 for(int j = 0; j < (int)ghost[i].size(); j++){
@@ -439,44 +541,65 @@ int main(int argc, char* argv[]){
                             klee->s_cd = max(0, klee->s_cd - 1);
                         }
                     }
-                    //gameover or win
                     if(gameOver){
                         string title = "Game Over!";
-                        if(life == 0){
+                        if(klee->life == 0){
                             title = "You failed!";
-                            int gState = showFail(gameOverMusic, title, gTBackground, gTEndLevelDialog, gTFailText, gTMenuButtonsSpriteSheet, gRenderer, gFont, failedButtons);
+                            //klee->updateState(); updateData(); showData();
+                            int gState = showFail(button, gameOverMusic, title, gTBackground, gTEndLevelDialog, gTFailText, gTMenuButtonsSpriteSheet, gRenderer, gFont, failedButtons);
                             if(gState == 0){
                                 SDL_RenderClear(gRenderer);
-                                int nxtState = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
+                                int nxtState = showMenu(button, gTTitle, gHalloFont, clearedLevel, gFont, gTSmallDialog, gTPreIns, menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
                                 if(nxtState == -1){
-                                    isRunning = 0; play = 0;
+                                    isRunning = 0; play = 0; break;
+                                }
+                                else if(nxtState == 1){
+                                    isRunning = 1; gameOver = 0; already = 0; new_p = 0; new_g = 0;
+                                    clear(tiles);
                                 }
                                 else{
-                                    isRunning = 1; life = 3; already = 0;gameOver = 0;
+                                    isRunning = 1; klee->life = 3; already = 0;gameOver = 0; st_level = 0;
+                                    if(nxtState == 0){
+                                        curLevelId = nxtState; new_p = 1; new_g = 1; clearedLevel.clear();
+                                    }
+                                    else{
+                                        curLevelId = nxtState - 2; new_p = 1; new_g = 1;
+                                    }
                                     clear(tiles);
                                 }
                             }
                             else{
-                                isRunning = 0; play = 0;
+                                isRunning = 0; play = 0; break;
                             }
                         }
                         else{
-                            int gState = showGameOver(gameOverMusic, title, gTBackground, gTEndLevelDialog, gTLoseText, gTMenuButtonsSpriteSheet, gRenderer, gFont, gameOverButtons);
+                            klee->updateState(); updateData(); //showData();
+                             cout << st_level << '\n';
+                            int gState = showGameOver(button, gameOverMusic, title, gTBackground, gTEndLevelDialog, gTLoseText, gTMenuButtonsSpriteSheet, gRenderer, gFont, gameOverButtons);
                             if(gState == 1){ // backto menu
-                                //cout << "From game over to menu!\n";
                                 SDL_RenderClear(gRenderer);
-                                int nxt_state = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
-                                if(!nxt_state){
-                                    //cout << "Restart!\n";
-                                    isRunning = 1; life = 3; already = 0;gameOver = 0;
+                                int nxt_state = showMenu(button, gTTitle, gHalloFont, clearedLevel, gFont, gTSmallDialog, gTPreIns, menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
+                                if(nxt_state == -1){
+                                    isRunning = 0; play = 0; break;
+                                }
+                                else if(nxt_state == 1){
+                                    isRunning = 1; already = 0; gameOver = 0; new_p = 0; new_g = 0;
                                     clear(tiles);
                                 }
-                                if(nxt_state == -1){
-                                    isRunning = 0; play = 0;
+                                else{
+                                    isRunning = 1; klee->life = 3; already = 0;gameOver = 0; st_level = 0;
+                                    if(nxt_state == 0){
+                                        curLevelId = 0; new_p = 1; new_g = 1; clearedLevel.clear();
+                                    }
+                                    else{
+                                        curLevelId = nxt_state -2; new_p = 1; new_g = 1;
+                                    }
+                                    clear(tiles);
                                 }
                             }
-                            else{ //keep playing
-                                isRunning = 1; gameOver = 0;
+                            else{
+                                isRunning = 1; gameOver = 0; new_p = 0; new_g = 0; already = 0;
+                                clear(tiles);
                             }
                         }
                         if(klee != NULL){
@@ -485,22 +608,58 @@ int main(int argc, char* argv[]){
                     }
                     if(won){
                         string title = "You won!";
-                        int gState = showClearLevel(wonMusic, title, gTBackground, gTEndLevelDialog, gTWinText, gFont, gTMenuButtonsSpriteSheet, gRenderer, wonButtons);
+                        bool ck = 0; cout << levels[curLevelId] << "!\n";
+                        for(int i =0; i <(int)clearedLevel.size(); i++){
+                            //cout << clearedLevel[i] << ' ';
+                            if(clearedLevel[i] == levels[curLevelId]){
+                                ck = 1; //cout << clearedLevel[i] << '\n';
+                                break;
+                            }
+                        }
+                        //cout << '\n';
+                        if(!ck){
+                            cout << "F\n";
+                            clearedLevel.pb(levels[curLevelId]);
+                        }
+                        int gState = showClearLevel(button, clearedLevel, wonMusic, title, gTBackground, gTEndLevelDialog, gTWinText, gFont, gTMenuButtonsSpriteSheet, gRenderer, wonButtons);
                         if(gState == -1){
-                            play = 0; isRunning = 0;
+                            play = 0; isRunning = 0; break;
                         }
                         else if(gState == 0 && curLevelId < 1) {
-                            curLevelId++; life = klee->life;
+                            curLevelId++;
                             isRunning = 1; won = 0; already = 0;
+                            new_p = 0; new_g = 1;
+                            klee->resetcoor();
+                            klee->updateState(); updateData();
+                            //cout << "Win:\n";
+                            //showData();
+                            clear(tiles);
+                        }
+                        else if(gState == 0 && curLevelId == 1){
+                            isRunning = 1; won = 0; already = 0;
+                            new_p = 0; new_g = 0;
+                            klee->resetcoor(); klee->updateState(); updateData();
                             clear(tiles);
                         }
                         else{
-                            int nxt_state = showMenu(menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
+                            klee->updateState(); updateData(); showData();
+                            int nxt_state = showMenu(button, gTTitle, gHalloFont, clearedLevel, gFont, gTSmallDialog, gTPreIns, menuMusic, gTBackground, gTMenuButtonsSpriteSheet, gRenderer, menuStart);
                             if(nxt_state == -1){
-                                isRunning = 0; play = 0;
+                                isRunning = 0; play = 0; break;
                             }
-                            if(!nxt_state){
-                                isRunning = 1; won = 0; life = 3; already = 0;
+                            else if(nxt_state == 1){
+                                isRunning = 1; won = 0; already = 0; new_p = 0; new_g = 0;
+                                clear(tiles);
+                            }
+                            else{
+                                isRunning = 1; won = 0;klee->life = 3; already = 0; st_level = 0;
+                                if(nxt_state == 0){
+                                    curLevelId = 0; clearedLevel.clear();
+                                }
+                                else{
+                                    curLevelId = nxt_state - 2;
+                                }
+                                new_p = 1; new_g = 1;
                                 clear(tiles);
                             }
                         }
@@ -581,6 +740,9 @@ bool loadMedia(){
     }
     if(!gTEndLevelSign.loadFromFile("image/png/Object/Sign_1.png", gRenderer)){
         cout << "Failed to load sign!"; success = false;
+    }
+    if(!gTSmallDialog.loadFromFile("image/paper/smaller-dialog.png", gRenderer)){
+        success = false;
     }
     for(int i = 0; i < 18; i++){
         string tmp;
@@ -762,7 +924,7 @@ bool loadMedia(){
                 if(i == 0) tmp = fileGhost0[j - 6] + "_f";
                 else tmp = fileGhost1[j - 6] + "_f";
             }
-            string fname = "C:/Users/HP/Documents/code/ltnc/gamebtl/image/characters/" + fileGhost[i] + "/" + tmp + ".png";
+            string fname = "image/characters/" + fileGhost[i] + "/" + tmp + ".png";
             //cout << i << ' ' << j << ": " << fname << '\n';
             if(!gTEnemy[i][j].loadFromFile(fname, gRenderer)){
                 cout << "Failed to load " << fileGhost[i] << "'s " << tmp << " state\n"; success = false;
@@ -880,12 +1042,12 @@ bool loadMedia(){
         }
     }
     string tmp = fileArrow[0];
-    string fname = "image/characters/Yurei/" + tmp + ".png"; cout << fname << '\n';
+    string fname = "image/characters/Yurei/" + tmp + ".png"; //cout << fname << '\n';
     if(!gTArrow[2].loadFromFile(fname, gRenderer)){
             cout << "Failed to load ghost's fire!\n"; success = false;
     }
     tmp += "_f";
-    fname = "image/characters/Yurei/" + tmp + ".png"; cout << fname << '\n';
+    fname = "image/characters/Yurei/" + tmp + ".png";// cout << fname << '\n';
     if(!gTArrow[5].loadFromFile(fname, gRenderer)){
             cout << "Failed to load ghost's fire!\n"; success = false;
     }
@@ -898,20 +1060,24 @@ bool loadMedia(){
         }
         gArrowSpriteClipsSize[2] = 3; gArrowSpriteClipsSize[5] = 3;
     }
-    gTitleFont = TTF_OpenFont("fonts/Helmet.ttf", 60);
-    if(gTitleFont == NULL){
-        cout << "Unable to load Helmet font! " << TTF_GetError() << '\n'; success = false;
+    if(!gTLetter.loadFromFile("image/png/Object/letter.jpg", gRenderer)){
+        success = false;
     }
+    else{
+        gLetter = {143, 32, 34, 23};
+    }
+    gTitleFont = TTF_OpenFont("fonts/Helmet.ttf", 60);
     gFont = TTF_OpenFont("fonts/Mgen+ 1pp regular.ttf", 24);
     if(gFont == NULL){
         cout << "Unable to load Mgen regular font! " << TTF_GetError() << '\n'; success = false;
     }
     gPauseFont1 = TTF_OpenFont("fonts/Mgen+ 1pp heavy.ttf", 50);
     gPauseFont2 = TTF_OpenFont("fonts/Mgen+ 1pp regular.ttf", 30);
+    gHalloFont = TTF_OpenFont("fonts/Halloween.ttf", 60);
     for(int i = 1; i <= 18; i++){
         int tmp = i;
         string fpath = "image/png/Tiles/"; string id = to_string(tmp);
-        fpath += id; fpath += ".png"; cout << fpath << '\n';
+        fpath += id; fpath += ".png"; //cout << fpath << '\n';
         if(!gTypeTiles[i].loadFromFile(fpath, gRenderer)){
             cout << "Failed to load tiles texture!"; success = false;
         }
@@ -971,21 +1137,24 @@ bool loadMedia(){
     fall = Mix_LoadWAV("sounds/fall.wav");
     die = Mix_LoadWAV("sounds/die.wav");
     player_hurt = Mix_LoadWAV("sounds/player_hurt.wav");
-    ghost_die[0] = Mix_LoadWAV("sounds/Scream.wav");
-    ghost_die[1] = Mix_LoadWAV("sounds/cry.wav");
+    ghost_die[0] = Mix_LoadWAV("sounds/growl.wav");
+    ghost_die[1] = Mix_LoadWAV("sounds/Scream.wav");
     ghost_att = Mix_LoadWAV("sounds/att.wav");
+    sound_e = Mix_LoadWAV("sounds/sound_E.wav");//cout << "Ok!\n";
+    sound_q = Mix_LoadWAV("sounds/sound_q.wav");
+    sound_s = Mix_LoadWAV("sounds/sound_s.wav");
+    button = Mix_LoadWAV("sounds/button.wav");
 
     return success;
 }
 
-bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMIES]){
+bool setTiles(Tile* tiles[], string mapName){
     bool success = true;
     string fmap = "image/png/Map/map_" + mapName + ".csv";
     fstream file(fmap);
     vector<string> map_row;
     vector<vector<string>> map_content;
     string line, stringId;
-    vector<pair<pair<int, int>, pair<int, int>>> coor;
     if(file.is_open()){
         while(getline(file, line)){
             map_row.clear();
@@ -997,6 +1166,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
         }
     }
     file.close();
+    ground.clear(); coor.clear(); is_mv.clear();
     int tileId = 0;int li = -1; int lj = -1;
     //ground.pb(make_pair(make_pair(0, 9 * 32), 18 * 32));
     int lev;
@@ -1023,6 +1193,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                 if(intId == 7){
                     ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
                     coor.pb(make_pair(make_pair(lj, li), make_pair(j, i)));
+                    is_mv[mp(mp(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT)] = 0;
                     li = -1; lj = -1;
                 }
                 if(intId == 13){
@@ -1030,6 +1201,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                 }
                 if(intId == 15){
                     ground.pb(make_pair(make_pair(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT));
+                    is_mv[mp(mp(lj * TILE_WIDTH, j * TILE_WIDTH), i * TILE_HEIGHT)] = 1;
                     if(lv == "1-1"){
                         if((int)upDown.size() < 4){
                             movingGround* tmp = NULL;
@@ -1040,7 +1212,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                         }
                     }
                     else{
-                        cout << ground.size() - 1 << ' ' <<  j << '\n';
+                        //cout << ground.size() - 1 << ' ' <<  j << '\n';
                         if(j != 130 && j != 181){
                             movingGround* tmp = NULL;
                             tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, 160, 15 * 32, "ud");
@@ -1057,7 +1229,7 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                         }
                         else{
                             movingGround* tmp = NULL;
-                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, 177 * TILE_WIDTH, 183 * TILE_WIDTH, i * TILE_HEIGHT, i * TILE_HEIGHT, "lr");
+                            tmp = new movingGround(lev, lj * TILE_WIDTH, (j + 1) * TILE_WIDTH, i * TILE_HEIGHT, 177 * TILE_WIDTH, 185 * TILE_WIDTH, i * TILE_HEIGHT, i * TILE_HEIGHT, "lr");
                             tmp->setDeltaVel(0);
                             leftRight.pb(tmp);
                             lrId.pb((int)ground.size() - 1);
@@ -1067,16 +1239,11 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
                 }
                 if(intId == 3){
                     ground.pb(mp(mp(0, j * TILE_WIDTH), i * TILE_HEIGHT));
+                    is_mv[mp(mp(0, j * TILE_WIDTH), i * TILE_HEIGHT)] = 0;
                 }
                 if(intId == 1){
                     ground.pb(mp(mp(j * TILE_WIDTH, LEVEL_WIDTH[lev] - TILE_WIDTH), i * TILE_HEIGHT));
-                    if(lv == "1-2"){
-                        for(int ii = 0; ii < TOTAL_ENEMIES; ii++){
-                            Enemy* e = new Enemy(j * TILE_WIDTH, i * TILE_HEIGHT, LEVEL_WIDTH[lev] - TILE_WIDTH, ii, gEnemySpriteClips[ii][5][0]);
-                            ghost[ii].pb(e);
-                        }
-                    }
-
+                    is_mv[mp(mp(j * TILE_WIDTH, LEVEL_WIDTH[lev] - TILE_WIDTH), i * TILE_HEIGHT)] = 0;
                 }
                 tiles[tileId] = new Tile(j * TILE_WIDTH, i * TILE_HEIGHT, intId); tileId++;
             }
@@ -1085,14 +1252,20 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
             break;
         }
     }
+    //for(auto it : is_mv){
+    //    cout << it.fi.fi.fi << ' ' << it.fi.fi.se << ' ' << it.fi.se << ": " << it.se << '\n';
+    //}
     tot_tiles = tileId;
+    return success;
+}
 
+void setGhosts(string lv){
+    //cout << coor.size() << ' ' << ground.size() << '\n';
     srand(time(NULL));
     int noE = 2;
     if(lv != "1-1"){
         noE = 3;
     }
-    cout << "Number of enemies: " << noE * 2 << '\n';
     for(int i = 0; i < TOTAL_ENEMIES; i++){
         for(int j = 0; j < noE; j++){
             int id = rand() % (int)coor.size();
@@ -1102,7 +1275,21 @@ bool setTiles(Tile* tiles[], string mapName, vector<Enemy*> (&ghost)[TOTAL_ENEMI
         }
     }
     coor.clear();
-    return success;
+    if(lv == "1-2"){
+        for(int i = 0; i < (int)ground.size(); i++){
+            if(ground[i].fi.se == LEVEL_WIDTH[1] - TILE_WIDTH){
+                //cout << "Fin ground:    " << i << '\n';
+                for(int ii = 0; ii < TOTAL_ENEMIES; ii++){
+                    for(int c = 0; c < 4; c++){
+                        Enemy* e = new Enemy(ground[i].fi.fi, ground[i].se, ground[i].fi.se, ii, gEnemySpriteClips[ii][5][0]);
+                        int f = c * 48; //cout << f << ' ';
+                        e->setDeltaX(f);
+                        ghost[ii].pb(e);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void clear(Tile* tiles[]){
@@ -1149,9 +1336,107 @@ void clear(Tile* tiles[]){
         i++;
 	}
 	//cout << (int)upDown.size() << ' ' << (int)leftRight.size();
-	ground.clear();
+	ground.clear(); coor.clear(); is_mv.clear();
 	udId.clear(); lrId.clear();
 	tot_tiles = 0;
+}
+
+void setupData(){
+    string fname = "data.txt";
+    fstream file(fname);
+    vector<string> row;
+    vector<vector<string>> content;
+    string line, stringId;
+    if(file.is_open()){
+        while(getline(file, line)){
+            row.clear();
+            stringstream str(line);
+            while(getline(str, stringId, ' ')){
+                row.pb(stringId);
+            }
+            content.pb(row);
+        }
+        file.close();
+    }
+    //cleared level
+    int cleared = stoi(content[1][0]); curLevelId = stoi(content[1][1]); st_level = stoi(content[1][2]);
+    for(int i = (int)clearedLevel.size(); i < cleared; i++){
+        clearedLevel.pb(levels[i]);
+    }
+    //ghosts
+    int sz[2];
+    sz[0] = stoi(content[2][0]);  sz[1] = stoi(content[2][1]);
+    int curline = 3;
+    for(int t = 0; t < TOTAL_ENEMIES; t++){
+        for(int i = 0; i < sz[t]; i++){
+            Enemy* e = new Enemy(stoi(content[curline][0]), stoi(content[curline][2]), stoi(content[curline][1]), t, gEnemySpriteClips[t][5][0]);
+            int f = stoi(content[curline][4]);
+            e->setDeltaX(f);
+            ghost[t].pb(e);
+            int cur_health = stoi(content[curline][3]);
+            e->setHealth(cur_health);
+            curline++;
+        }
+    }
+}
+
+void updateData(){
+    for(int ty = 0; ty < TOTAL_ENEMIES; ty++){
+        int j = 0;
+        while(j < (int)ghost[ty].size()){
+            Enemy* e = ghost[ty].at(j);
+            if(e->getHealth() <= 0){
+                ghost[ty].erase(ghost[ty].begin() + j);
+                delete e; e = NULL;
+                j--;
+            }
+            j++;
+        }
+    }
+    string fname = "data.txt";
+    fstream file;
+    file.open(fname, ios::app);
+    if(file){
+        string cl = to_string((int)clearedLevel.size()) + " " + to_string(curLevelId) + " " + to_string(st_level) + "\n"; // << cl;
+        file << cl;
+        string numG = to_string((int)ghost[0].size()) + " " + to_string((int)ghost[1].size()) + "\n";// cout << numG;
+        file << numG;
+        for(int ty = 0; ty < TOTAL_ENEMIES; ty++){
+            for(int i = 0; i < (int)ghost[ty].size(); i++){
+                string line = to_string(ghost[ty][i]->getEnemyLeftX())
+                                + " " + to_string(ghost[ty][i]->getEnemyRightX()) + " " + to_string(ghost[ty][i]->getEnemyGround())
+                                + " " + to_string(ghost[ty][i]->getHealth()) + " " + to_string(ghost[ty][i]->getDeltaX()) + "\n";
+                //cout << line;
+                file << line;
+            }
+        }
+        file.close();
+    }
+}
+
+void showData(){
+    string fname = "data.txt";
+    fstream file(fname);
+    vector<string> row;
+    vector<vector<string>> content;
+    string line, stringId;
+    if(file.is_open()){
+        while(getline(file, line)){
+            row.clear();
+            stringstream str(line);
+            while(getline(str, stringId, ' ')){
+                row.pb(stringId);
+            }
+            content.pb(row);
+        }
+        file.close();
+    }
+    for(int i = 0; i < (int)content.size(); i++){
+        for(int j = 0; j < (int)content[i].size(); j++){
+            cout << content[i][j] << ' ';
+        }
+        cout << '\n';
+    }
 }
 
 void close(Tile* tiles[]){
@@ -1178,6 +1463,9 @@ void close(Tile* tiles[]){
     for(int i = 0; i < 2; i++){
         gTMenuButtonsSpriteSheet[i].free();
     }
+    LTexture gTypeTiles[TOTAL_TILE_TYPES];
+
+    gTText.free();
     gTEndLevelSign.free();
     gTEndLevelDialog.free();
     gTWinText.free();
@@ -1188,11 +1476,18 @@ void close(Tile* tiles[]){
     gTEnemyHb.free();
     gTEnemyHbBg.free();
     gTLevelDialog.free();
+    gTUlt.free();
+    gTUltCD.free();
+    gTUltTime.free();
+    gTLetter.free();
+    gTPreIns.free();
+    gTSmallDialog.free();
 
-    TTF_CloseFont(gFont);
-    TTF_CloseFont(gTitleFont);
-    TTF_CloseFont(gPauseFont1);
-    TTF_CloseFont(gPauseFont2);
+    TTF_CloseFont(gFont); gFont = NULL;
+    TTF_CloseFont(gTitleFont); gTitleFont = NULL;
+    TTF_CloseFont(gPauseFont1); gPauseFont1 = NULL;
+    TTF_CloseFont(gPauseFont2); gPauseFont2 = NULL;
+    TTF_CloseFont(gHalloFont); gHalloFont = NULL;
 
     Mix_FreeMusic(menuMusic);
     menuMusic = NULL;
@@ -1223,7 +1518,18 @@ void close(Tile* tiles[]){
     ghost_die[1] = NULL;
     Mix_FreeChunk(ghost_att);
     ghost_att = NULL;
+    Mix_FreeChunk(sound_e);
+    sound_e = NULL;
+    Mix_FreeChunk(sound_q);
+    sound_q = NULL;
+    Mix_FreeChunk(sound_s);
+    sound_s = NULL;
+    Mix_FreeChunk(button);
+    button = NULL;
 
+    if(letter != NULL){
+        delete letter;
+    }
     clear(tiles);
     int i = 0;
 	while(i < (int)menuStart.size()){
@@ -1265,5 +1571,5 @@ void close(Tile* tiles[]){
         }
         i++;
 	}
-
+    clearedLevel.clear();
 }

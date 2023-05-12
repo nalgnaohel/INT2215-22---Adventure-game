@@ -28,7 +28,7 @@ Enemy::Enemy(int lx, int y, int rx, int type_, SDL_Rect& box){
     ghost_hbar = NULL;
     ghost_hbar = new Healthbar();
     ghost_hbar->setHbVal(mxHealth, health, 100, 50);
-    damage = 0;
+    damage = 0; del = 0;
 }
 
 Enemy::~Enemy(){
@@ -87,6 +87,10 @@ int Enemy::getEnemyLeftX(){
 
 int Enemy::getEnemyRightX(){
     return mEnemyRightX;
+}
+
+int Enemy::getEnemyGround(){
+    return gr;
 }
 
 void Enemy::updateEnemyBox(SDL_Rect& box){
@@ -240,4 +244,17 @@ int Enemy::getHealth(){
 
 int Enemy::getExp_val(){
     return exp_val;
+}
+
+void Enemy::setHealth(int& cur_health){
+    health = cur_health;
+}
+
+void Enemy::setDeltaX(int& delta){
+    del = delta;
+    mEnemyBox.x += delta;
+}
+
+int Enemy::getDeltaX(){
+    return del;
 }

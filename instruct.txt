@@ -1,14 +1,14 @@
 Hello, this is an instruction for this game.
 
-How to play:
+Controls:
 - Use arrow keys(left, right) to move to the corresponding direction.
 - Press up arrow key to jump
+- P: pause game
 - E: swift attack
 - Q: create magic arrow
 - S: ultimate - magic sphere. Although the damage is huge, please be aware that
 the cooldown for magic sphere is 20s(maybe lower if you reach higher level).
 You may increase your exp by killing ghosts(different type of ghosts will have
 different exp value). 
-Press Enter or Space to close this 'letter'. You may open it by pressing X.
-Thank you for spending time playing this game. I hope you will enjoy it.
+Press Space to close this 'letter'. You may open it by pressing X.
 

@@ -23,3 +23,11 @@ bool checkCollision(SDL_Rect& a, SDL_Rect& b){
     }
     return 1;
 }
+
+/*
+how should data.txt looks like?
+Klee: life - exp - lim_cd - last coor(x, y)
+no of cleared Level
+no of ghost0, ghost 1
+coordinate of each ghost(0 ->1)(lx - y - rx) - health
+*/

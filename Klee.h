@@ -19,7 +19,7 @@ class Klee
         void handleKleeEvent(SDL_Event &e, SDL_Rect (&gKleeSpriteClips)[18][16], vector<pair<pair<int, int>, int>>& ground, pair<int, int> (&kFeet)[9][16]);
         bool touchObjects(Tile* tiles[]);
         bool onGround(vector<pair<pair<int, int>, int>>& ground);
-        void move(int curLevel, Tile* tiles[],vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]);
+        void move(int curLevel, map<pair<pair<int, int>, int>, bool>& is_mv, Tile* tiles[],vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]);
         void render(LTexture& gTKleeSpriteSheet, LTexture& gTKleeHb, LTexture& gTKleeHbBackground, SDL_Rect (&gKleeHbClips)[2], LTexture& gTKleeExp, LTexture& gTKleeExpBg, SDL_Rect (&gKleeExpbClips)[2], SDL_Renderer* gRenderer, SDL_Rect* clip, SDL_Rect& camera);
         void setCamera(int curLevel, SDL_Rect& camera);
         void updateKleeHealth(Mix_Chunk* pState, int d, SDL_Rect (&gKleeSpriteClips)[18][16]);
@@ -32,16 +32,21 @@ class Klee
         int spriteId;
         int kleeFrame;
         void updateKleeBox(SDL_Rect& box, vector<pair<pair<int, int>, int>>& ground, pair<int, int> (&kFeet)[9][16]);
-        void handleArrowList(Mix_Chunk* ghost_die[2], SDL_Renderer* gRenderer, LTexture (&gTArrow)[6], SDL_Rect (&gArrowSpriteClips)[6][9], int (&gArrowSpriteClipsSize)[6], SDL_Rect& camera, vector<Enemy*> (&ghost)[TOTAL_ENEMIES], SDL_Rect (&gEnemySpriteClips)[2][12][7]);
+        void handleArrowList(Mix_Chunk* sound_q, Mix_Chunk* sound_s, Mix_Chunk* ghost_die[2], SDL_Renderer* gRenderer, LTexture (&gTArrow)[6], SDL_Rect (&gArrowSpriteClips)[6][9], int (&gArrowSpriteClipsSize)[6], SDL_Rect& camera, vector<Enemy*> (&ghost)[TOTAL_ENEMIES], SDL_Rect (&gEnemySpriteClips)[2][12][7]);
         bool isDown();
         int TOTAL_TILES;
         int st3;
         int s_cd;
         int life;
+        bool ins;
         pair<int, int> feet;
-        void updatemvGround(int& y);
+        void updatemvGround(int& x, int& y);
         vector<Arrow*> mArrowList;
+        void update_ins(int x_);
         void updateFrame(SDL_Rect (&gKleeSpriteClips)[18][16], int (&gKleeSpriteClipsSize)[18], vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gArrowSpriteClips)[6][9], SDL_Rect& camera, pair<int, int> (&kFeet)[9][16]);
+        void setState();
+        void updateState();
+        void resetcoor();
 
     private:
         int mKleeVelX, mKleeVelY;
@@ -57,6 +62,7 @@ class Klee
         int lim_cd;
         int level;
         Healthbar* klee_exp_bar; //well actually this is an exp bar
+        pair<int, int> last_ground;
 };
 
 #endif // KLEE_H

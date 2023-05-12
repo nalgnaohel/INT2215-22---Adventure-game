@@ -24,6 +24,9 @@ Klee::Klee(SDL_Rect& box)
     lim_cd = 20 * FRAME_PER_SECOND;
     feet.fi = 0; feet.se = 0;
     level = 0;
+    ins = 0;
+    last_ground.fi = mKleeBox.x; last_ground.se = mKleeBox.y;
+    life = 3;
 }
 
 Klee::~Klee(){
@@ -59,7 +62,7 @@ void Klee::handleKleeEvent(SDL_Event& e, SDL_Rect (&gKleeSpriteClips)[18][16], v
                 mKleeVelX += KLEE_VEL;
                 mRight = 1; mLeft = 0;
                 fRight = 1; fLeft = 0;
-                if(spriteId % 9 != 4 && spriteId % 9 != 1){
+                if((spriteId % 9 != 4 || (spriteId % 9 == 4 && kleeFrame >= 6 * KLEE_ID_FRAME[4])) && spriteId % 9 != 1){
                     kleeFrame = 0; //cout << "Change to 0\n";
                     spriteId = 8, updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId % 9]], ground, kFeet);
 
@@ -74,7 +77,7 @@ void Klee::handleKleeEvent(SDL_Event& e, SDL_Rect (&gKleeSpriteClips)[18][16], v
                 mKleeVelX -= KLEE_VEL;
                 mLeft = 1; mRight = 0;
                 fLeft = 1; fRight = 0;
-                if(spriteId % 9 != 4 && spriteId % 9 != 1){
+                if((spriteId % 9 != 4 || (spriteId % 9 == 4 && kleeFrame >= 6 * KLEE_ID_FRAME[4])) && spriteId % 9 != 1){
                     kleeFrame = 0;
                     spriteId = 17; updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId % 9] ], ground, kFeet);
                 }
@@ -226,7 +229,7 @@ bool Klee::touchObjects(Tile* tiles[]){
     return false;
 }
 
-void Klee::move(int curLevel, Tile* tiles[], vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]){
+void Klee::move(int curLevel, map<pair<pair<int, int>, int>, bool>& is_mv, Tile* tiles[], vector<pair<pair<int, int>, int>>& ground, SDL_Rect (&gKleeSpriteClips)[18][16], pair<int, int> (&kFeet)[9][16]){
     if(mJump && !mDown){
         if(onGround(ground)){
             spriteId = 4; kleeFrame = 0;
@@ -252,7 +255,7 @@ void Klee::move(int curLevel, Tile* tiles[], vector<pair<pair<int, int>, int>>& 
             }
             if(lx_ground <= mKleeBox.x + mKleeBox.w - rf && mKleeBox.x <= rx_ground + lf){
                 if(mKleeBox.y <= y_ground + TILE_HEIGHT && py >= y_ground + TILE_HEIGHT){
-                    cout << "Ground: " << mKleeBox.y << ' ' << py << " - " << lx_ground << ' ' << rx_ground << ' ' << y_ground + TILE_HEIGHT << '\n';
+                    //cout << "Ground: " << mKleeBox.y << ' ' << py << " - " << lx_ground << ' ' << rx_ground << ' ' << y_ground + TILE_HEIGHT << '\n';
                     mKleeBox.y = y_ground + TILE_HEIGHT;
                     mJump = 0; mKleeVelY = 0;
                     break;
@@ -267,10 +270,8 @@ void Klee::move(int curLevel, Tile* tiles[], vector<pair<pair<int, int>, int>>& 
     if(mDown){
         spriteId = 4;
         if(fLeft) spriteId += 9;
-        //if(kleeFrame < 5 * KLEE_ID_FRAME[spriteId % 9]){
         kleeFrame = 5 * KLEE_ID_FRAME[spriteId % 9];
         updateKleeBox(gKleeSpriteClips[spriteId][kleeFrame/KLEE_ID_FRAME[spriteId % 9]], ground, kFeet);
-        //}
         mKleeVelY += GRAVITY_SPEED;
         if(mKleeVelY > MAX_FALL_SPEED){
             mKleeVelY = MAX_FALL_SPEED;
@@ -286,7 +287,7 @@ void Klee::move(int curLevel, Tile* tiles[], vector<pair<pair<int, int>, int>>& 
             if(mKleeBox.x + mKleeBox.w - rf >= ground[i].fi.fi && mKleeBox.x + lf <= ground[i].fi.se + TILE_WIDTH){
                 if(mKleeBox.y + mKleeBox.h >= ground[i].se && pdy <= ground[i].se){
                     mKleeVelY = 0; mDown = 0;
-                    cout << "Expected to touch here: " << ground[i].fi.fi << ' ' << ground[i].fi.se << ' ' << ground[i].se << '\n';
+                    //cout << "Expected to touch here: " << ground[i].fi.fi << ' ' << ground[i].fi.se << ' ' << ground[i].se << '\n';
                     kleeFrame = 6 * KLEE_ID_FRAME[spriteId % 9];
                     SDL_Rect newBox = {817, 70, 31, 58};
                     updateKleeBox(newBox, ground, kFeet);
@@ -296,10 +297,29 @@ void Klee::move(int curLevel, Tile* tiles[], vector<pair<pair<int, int>, int>>& 
             }
         }
     }
-
+    //if(spriteId % 9 != 4 || kleeFrame < 6 * KLEE_ID_FRAME[4]){
     mKleeBox.x += mKleeVelX;
     if(mKleeBox.x < 0 || mKleeBox.x + mKleeBox.w > LEVEL_WIDTH[curLevel] || touchObjects(tiles)){
         mKleeBox.x -= mKleeVelX;
+    }
+    //}
+
+    for(int i = 0; i < (int)ground.size(); i++){
+        //cout << ground[i].fi.fi << ' ' << ground[i].fi.se << ' ' << ground[i].se << ' ' << is_mv[ground[i]] << '\n';
+        int lx_ground = ground[i].fi.fi;
+        int rx_ground = ground[i].fi.se + TILE_WIDTH;
+        int y_ground = ground[i].se;
+        //cout << mKleeBox
+        if(mKleeBox.y + mKleeBox.h == y_ground){
+            int dlx = feet.fi;
+            int drx = feet.se;
+            if(spriteId >= 9){
+                swap(dlx, drx);
+            }
+            if(lx_ground <= mKleeBox.x + mKleeBox.w - drx && mKleeBox.x + dlx <= rx_ground && is_mv[ground[i]] == 0){
+                last_ground.fi = lx_ground + 20; last_ground.se = y_ground - mKleeBox.h;
+            }
+        }
     }
 
 }
@@ -387,7 +407,8 @@ void Klee::updateKleeBox(SDL_Rect& box, vector<pair<pair<int, int>, int>>& groun
     feet = kFeet[spriteId % 9][kleeFrame / KLEE_ID_FRAME[spriteId % 9]];
 }
 
-void Klee::updatemvGround(int& y){
+void Klee::updatemvGround(int& x, int& y){
+    mKleeBox.x = x;
     mKleeBox.y = y;
 }
 
@@ -419,7 +440,7 @@ bool Klee::isDown(){
     return mDown;
 }
 
-void Klee::handleArrowList(Mix_Chunk* ghost_die[2], SDL_Renderer* gRenderer, LTexture (&gTArrow)[6], SDL_Rect (&gArrowSpriteClips)[6][9], int (&gArrowSpriteClipsSize)[6], SDL_Rect& camera, vector<Enemy*> (&ghost)[TOTAL_ENEMIES], SDL_Rect (&gEnemySpriteClips)[2][12][7]){
+void Klee::handleArrowList(Mix_Chunk* sound_q, Mix_Chunk* sound_s, Mix_Chunk* ghost_die[2], SDL_Renderer* gRenderer, LTexture (&gTArrow)[6], SDL_Rect (&gArrowSpriteClips)[6][9], int (&gArrowSpriteClipsSize)[6], SDL_Rect& camera, vector<Enemy*> (&ghost)[TOTAL_ENEMIES], SDL_Rect (&gEnemySpriteClips)[2][12][7]){
     for(int i = 0; i < (int)mArrowList.size(); i++){
         Arrow* ar = mArrowList.at(i);
         if(ar != NULL){
@@ -431,6 +452,12 @@ void Klee::handleArrowList(Mix_Chunk* ghost_die[2], SDL_Renderer* gRenderer, LTe
                         SDL_Rect arBox = ar->getBox();
                         if(checkCollision(arBox, eBox)){
                             if(!ar->hit){
+                                if(ar->type % 3 == 0){
+                                    Mix_PlayChannel(-1, sound_s, 0);
+                                }
+                                if(ar->type % 3 == 1){
+                                    Mix_PlayChannel(-1, sound_q, 0);
+                                }
                                 ghost[k][j]->updateHealth(ghost_die, ar->getDamage(), gEnemySpriteClips);
                                 //cout << "Hit! -  Health: " << ghost[k][j]->getHealth() << '\n';
                                 ar->hit = 1;
@@ -559,11 +586,57 @@ void Klee::updateExp(Mix_Chunk* lv_up, int val){
             life++;
         }
         else{
-            lim_cd -= FRAME_PER_SECOND * (life / 4);
+            lim_cd -= FRAME_PER_SECOND * 2;
             if(lim_cd < 0){
                 lim_cd = 0;
             }
         }
         exp -= EXP_LIM;
     }
+}
+
+void Klee::update_ins(int x_){
+    mKleeBox.x = x_;
+    mKleeVelX = 0; mKleeVelY = 0;
+    kleeFrame = 0;
+    spriteId = 3;
+    if(fLeft) spriteId += 9;
+}
+
+void Klee::setState(){
+    string fname = "data.txt";
+    fstream file(fname);
+    vector<string> row;
+    vector<vector<string>> content;
+    string line, stringId;
+    if(file.is_open()){
+        while(getline(file, line)){
+            row.clear();
+            stringstream str(line);
+            while(getline(str, stringId, ' ')){
+                row.pb(stringId);
+            }
+            content.pb(row);
+        }
+        file.close();
+    }
+    life = stoi(content[0][0]); exp = stoi(content[0][1]); lim_cd = stoi(content[0][2]);
+    ins = stoi(content[0][3]); mKleeBox.x = stoi(content[0][4]); mKleeBox.y = stoi(content[0][5]);
+    last_ground.fi = mKleeBox.x; last_ground.se = mKleeBox.y;
+}
+
+void Klee::updateState(){
+    string fname = "data.txt";
+    ofstream file(fname);
+    if(file.is_open()){
+        string line = to_string(life) + " " + to_string(exp) + " " + to_string(lim_cd) + " " + to_string(ins) + " " + to_string(last_ground.fi) + " " + to_string(last_ground.se) + "\n";
+        file << line;
+        file.close();
+    }
+}
+
+void Klee::resetcoor(){
+    mKleeBox.x = 10; mKleeBox.y = 510;
+    last_ground.fi = 10; last_ground.se = 510;
+    ins = 1;
 }

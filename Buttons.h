@@ -15,6 +15,7 @@ class Buttons
         void changeNameColor(SDL_Color newNameColor);
         SDL_Color getColor();
         SDL_Rect getButtonBox();
+        string getButtonName();
 
     protected:
 

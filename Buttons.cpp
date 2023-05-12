@@ -60,3 +60,7 @@ SDL_Color Buttons::getColor(){
 SDL_Rect Buttons::getButtonBox(){
     return mButtonBox;
 }
+
+string Buttons::getButtonName(){
+    return buttonName;
+}

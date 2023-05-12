@@ -51,6 +51,8 @@
 		<Unit filename="Klee.h" />
 		<Unit filename="LTexture.cpp" />
 		<Unit filename="LTexture.h" />
+		<Unit filename="Letter.cpp" />
+		<Unit filename="Letter.h" />
 		<Unit filename="Tile.cpp" />
 		<Unit filename="Tile.h" />
 		<Unit filename="Timer.cpp" />
