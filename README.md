@@ -12,5 +12,11 @@ You will mostly use keyboards to control this game:
 - Q: use magic arrows
 - E: for attacking at short distances.
 
+Screenshots:
+![Image Description](https://github.com/nalgnaohel/Adventure-game/blob/main/Screen%20Shot%202024-03-14%20at%2015.04.30.png)
+![Image Description](https://github.com/nalgnaohel/Adventure-game/blob/main/Screen%20Shot%202024-03-14%20at%2015.04.35.png)
+
+
 I have read some sources, such as lazyfoo, to make this game. BGM, sound effects and images are from the Internet.
+
 Thank you for playing the game. I hope you will enjoy it.
